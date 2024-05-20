@@ -268,4 +268,3 @@ class Ring_Shader extends Shader {
         }`;
     }
 }
-

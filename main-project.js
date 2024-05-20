@@ -16,7 +16,7 @@ export class Main_Project extends Scene {
             sphere: new defs.Subdivision_Sphere(4),
             circle: new defs.Regular_2D_Polygon(1, 15),
             potsides: new defs.Cylindrical_Tube(100, 100),
-            
+            counter: new defs.Cube()         
         };
 
         // *** Materials
@@ -25,6 +25,8 @@ export class Main_Project extends Scene {
                 {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
             potsides: new Material(new Gouraud_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#808080")}),
+            counter: new Material(new Gouraud_Shader(),
+                {ambient: .4, diffusivity: .6, color: hex_color("#3d251e")}),
         }
             
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -41,6 +43,13 @@ export class Main_Project extends Scene {
         this.key_triggered_button("Attach to planet 4", ["Control", "4"], () => this.attached = () => this.p4);
         this.new_line();
         this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
+    }
+
+    background(context, program_state) {
+        let counter_transform = Mat4.identity();
+        counter_transform = counter_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
+                                        .times(Mat4.scale(5,5,5));
+        this.shapes.counter.draw(context, program_state, counter_transform, this.materials.counter);
     }
 
     display(context, program_state) {
@@ -66,6 +75,7 @@ export class Main_Project extends Scene {
         program_state.lights = [new Light(light_position, color(0,0,0), 1000)];
         this.shapes.potsides.draw(context, program_state, pot_transform, this.materials.potsides);
 
+        this.background(context, program_state);
     }
 }
 

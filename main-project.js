@@ -1,7 +1,7 @@
 import {defs, tiny} from './examples/common.js';
 
 const {
-    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
+    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
 } = tiny;
 
 export class Main_Project extends Scene {
@@ -16,20 +16,33 @@ export class Main_Project extends Scene {
             sphere: new defs.Subdivision_Sphere(4),
             circle: new defs.Regular_2D_Polygon(1, 15),
             potsides: new defs.Cylindrical_Tube(100, 100),
-            counter: new defs.Cube()         
+            counter1: new defs.Square(),
+            backsplash: new defs.Square()         
         };
 
+        //this.shapes.counter.arrays.texture_coord =
+        //    this.shapes.counter.arrays.texture_coord.map((vector) => vector.times(4));
+
+        //this.textures = {
+        //    granite: new Texture("assets/granite.jpg"),
+        //};
+
         // *** Materials
+        //const textured = new defs.Textured_Phong(1);
         this.materials = {
             test: new Material(new defs.Phong_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
             potsides: new Material(new Gouraud_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#808080")}),
-            counter: new Material(new Gouraud_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#3d251e")}),
+            //counter: new Material(new Gouraud_Shader(),
+            //    {ambient: .4, diffusivity: .6, color: hex_color("3d251e")}),
+            counter1: new Material(new defs.Textured_Phong(),
+                {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/granite.jpg")}),
+            backsplash: new Material(new Gouraud_Shader(),
+                {ambient: .4, diffusivity: .6, color: hex_color("#800080")}),
         }
             
-        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
+        this.initial_camera_location = Mat4.look_at(vec3(0, 15, 15), vec3(0, 0, 0), vec3(0, 1, 0));
     }
 
     make_control_panel() {
@@ -45,11 +58,18 @@ export class Main_Project extends Scene {
         this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
     }
 
-    background(context, program_state) {
-        let counter_transform = Mat4.identity();
-        counter_transform = counter_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
-                                        .times(Mat4.scale(5,5,5));
-        this.shapes.counter.draw(context, program_state, counter_transform, this.materials.counter);
+    background(context, program_state, model_transform) {
+        let counter1_transform = model_transform;
+        counter1_transform = counter1_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
+                                        .times(Mat4.scale(10,10,1))
+                                        .times(Mat4.translation(1.5,-.5,2.5));
+        this.shapes.counter1.draw(context, program_state, counter1_transform, this.materials.counter1);
+
+        let backsplash_transform = model_transform;
+        backsplash_transform = backsplash_transform.times(Mat4.rotation(Math.PI/2,0,0,1))
+                                        .times(Mat4.scale(10,100,1))
+                                        .times(Mat4.translation(0,0,-20));
+        this.shapes.backsplash.draw(context, program_state, backsplash_transform, this.materials.backsplash);
     }
 
     display(context, program_state) {
@@ -71,11 +91,11 @@ export class Main_Project extends Scene {
         pot_transform = pot_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
                                         .times(Mat4.scale(5,5,5));
 
-        const light_position = vec4(0, 0, 0, 1);
-        program_state.lights = [new Light(light_position, color(0,0,0), 1000)];
+        const light_position = vec4(0, 10, 20, 1);
+        program_state.lights = [new Light(light_position, color(1,1,1,1), 500)];
         this.shapes.potsides.draw(context, program_state, pot_transform, this.materials.potsides);
 
-        this.background(context, program_state);
+        this.background(context, program_state, model_transform);
     }
 }
 

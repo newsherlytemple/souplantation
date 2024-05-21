@@ -4,6 +4,20 @@ const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
 } = tiny;
 
+// new shape that creates a torus with a smaller ring size
+class smallTorus extends Shape {
+    // Build a donut shape.  An example of a surface of revolution.
+    constructor(rows, columns, texture_range=[[0, 1], [0, 1]]) {
+        super("position", "normal", "texture_coord");
+        const circle_points = Array(rows).fill(vec3(1 / 30, 0, 0))
+            .map((p, i, a) => Mat4.translation(-2 / 3, 0, 0)
+                .times(Mat4.rotation(i / (a.length - 1) * 2 * Math.PI, 0, -1, 0))
+                .times(Mat4.scale(1, 1, 3))
+                .times(p.to4(1)).to3());
+        defs.Surface_Of_Revolution.insert_transformed_copy_into(this, [rows, columns, circle_points, texture_range]);
+    }
+}
+
 export class Main_Project extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
@@ -15,32 +29,121 @@ export class Main_Project extends Scene {
             torus2: new defs.Torus(3, 15),
             sphere: new defs.Subdivision_Sphere(4),
             circle: new defs.Regular_2D_Polygon(1, 15),
+
+            // shapes for pot + stovetop
             potsides: new defs.Cylindrical_Tube(100, 100),
-            
+            potbottom: new defs.Regular_2D_Polygon(1, 100),
+            stovetop: new defs.Cube(5,5),
+            pothandle: new defs.Torus(10,30),
+            pottop: new smallTorus(10,100),
+            burner: new defs.Torus(4,100),
+
         };
 
         // *** Materials
         this.materials = {
             test: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
-            potsides: new Material(new Gouraud_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#808080")}),
-        }
+                {ambient: .4, diffusivity: .6, color: hex_color("#89CFF0")}),
+
+            // materials for pot + stovetop
+            pot: new Material(new defs.Phong_Shader(),
+                {ambient: 0.4, diffusivity: 0.6, color: hex_color("#808080"), specularity: 1}),
+            stovetop: new Material(new Gouraud_Shader(),
+                {ambient: 1, diffusivity: .6, color: hex_color("#6c757d"), specularity: .01}),
+            burnertop: new Material(new Gouraud_Shader(),
+                {ambient: 0.4, diffusivity: 0.6, color: hex_color("#495057")}),
+            burner: new Material(new Ring_Shader(),
+                {ambient: 0.4, diffusivity: 0.6, color: hex_color("#d00000")})
+            }
             
-        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
+        this.initial_camera_location = Mat4.look_at(vec3(0, 15, 15), vec3(0, 0, 0), vec3(0, 1, 0));
     }
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
+        this.key_triggered_button("Add Carrots", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
         this.new_line();
-        this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.p1);
-        this.key_triggered_button("Attach to planet 2", ["Control", "2"], () => this.attached = () => this.p2);
+        this.key_triggered_button("Add Potatoes", ["Control", "1"], () => this.attached = () => this.p1);
+        this.key_triggered_button("Add Chicken", ["Control", "2"], () => this.attached = () => this.p2);
         this.new_line();
-        this.key_triggered_button("Attach to planet 3", ["Control", "3"], () => this.attached = () => this.p3);
-        this.key_triggered_button("Attach to planet 4", ["Control", "4"], () => this.attached = () => this.p4);
+        this.key_triggered_button("Remove Carrots", ["Control", "3"], () => this.attached = () => this.p3);
+        this.key_triggered_button("Remove Potatoes", ["Control", "4"], () => this.attached = () => this.p4);
         this.new_line();
-        this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
+        this.key_triggered_button("Remove Chicken", ["Control", "5"], () => this.attached = () => this.moon);
+    }
+
+    // draw the pot
+    draw_pot(context, program_state, model_transform){
+        let pot_trans = model_transform;
+
+        //sides
+        let inner_trans = pot_trans.times(Mat4.rotation(Math.PI/2,1,0,0))
+                                    .times(Mat4.scale(5,5,5));
+        this.shapes.potsides.draw(context, program_state, inner_trans, this.materials.pot);
+
+        let outer_trans = inner_trans.times(Mat4.scale(1.1, 1.1, 1.1));
+        this.shapes.potsides.draw(context, program_state, outer_trans, this.materials.pot);
+
+        let top_trans = pot_trans.times(Mat4.rotation(Math.PI/2, 1, 0, 0))
+                                 .times(Mat4.translation(0, 0, -2.75))
+                                 .times(Mat4.scale(7.9,7.9,1));
+        this.shapes.pottop.draw(context, program_state, top_trans, this.materials.pot);
+
+        // bottom
+        let bottom_trans = pot_trans.times(Mat4.rotation(Math.PI/2,1,0,0))
+                                    .times(Mat4.scale(5.1,5.1,5.1))
+                                    .times(Mat4.translation(0, 0, 0.5));
+        this.shapes.potbottom.draw(context, program_state, bottom_trans, this.materials.pot);
+
+        // two handles
+        let h1_trans = pot_trans.times(Mat4.translation(5.7,0.5,0))
+                                    .times(Mat4.rotation(Math.PI/2, 1, 0, 0))
+                                    .times(Mat4.rotation(Math.PI/4, 0, 1, 0))
+                                    .times(Mat4.scale(1,1.5,1));
+        this.shapes.pothandle.draw(context, program_state, h1_trans, this.materials.pot);
+
+        let h2_trans = pot_trans.times(Mat4.translation(-5.7,0.5,0))
+                                .times(Mat4.rotation(3*Math.PI/2, 1, 0, 0))
+                                .times(Mat4.rotation(Math.PI/4, 0, 1, 0))
+                                .times(Mat4.scale(1,1.5,1));
+        this.shapes.pothandle.draw(context, program_state, h2_trans, this.materials.pot);
+    }
+
+    // draw the stove top
+    draw_stovetop(context, program_state, model_transform) {
+        // stovetop
+        let loc_trans = model_transform;
+        loc_trans = loc_trans.times(Mat4.translation(-7,-5, -6))
+                                .times(Mat4.rotation(Math.PI/2, 1, 0, 0))
+        let stove_trans = loc_trans.times(Mat4.scale(16,14,0.5));
+        this.shapes.stovetop.draw(context, program_state, stove_trans, this.materials.stovetop);
+
+        // 4 burners, with a burner top + electric burner
+        let b1_trans = loc_trans.times(Mat4.translation(-7,-6,-1))
+                                .times(Mat4.scale(5.5,5.5,1));
+        this.shapes.stovetop.draw(context, program_state, b1_trans, this.materials.burnertop)
+        b1_trans = b1_trans.times(Mat4.translation(0, 0, -1));
+        this.shapes.burner.draw(context, program_state, b1_trans, this.materials.burner);
+
+        let b2_trans = loc_trans.times(Mat4.translation(7,-6,-1))
+                                .times(Mat4.scale(5.5,5.5,1));
+        this.shapes.stovetop.draw(context, program_state, b2_trans, this.materials.burnertop)
+        b2_trans = b2_trans.times(Mat4.translation(0, 0, -1));
+        this.shapes.burner.draw(context, program_state, b2_trans, this.materials.burner);
+                        
+        let b3_trans = loc_trans.times(Mat4.translation(7,6,-1))
+                                .times(Mat4.scale(5.5,5.5,1));
+        this.shapes.stovetop.draw(context, program_state, b3_trans, this.materials.burnertop)
+        b3_trans = b3_trans.times(Mat4.translation(0, 0, -1));
+        this.shapes.burner.draw(context, program_state, b3_trans, this.materials.burner);
+
+        let b4_trans = loc_trans.times(Mat4.translation(-7,6,-1))
+                                .times(Mat4.scale(5.5,5.5,1));
+        this.shapes.stovetop.draw(context, program_state, b4_trans, this.materials.burnertop)
+        b4_trans = b4_trans.times(Mat4.translation(0, 0, -1));
+        this.shapes.burner.draw(context, program_state, b4_trans, this.materials.burner);
+                        
+
     }
 
     display(context, program_state) {
@@ -58,13 +161,10 @@ export class Main_Project extends Scene {
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
         let model_transform = Mat4.identity();
 
-        let pot_transform = model_transform;
-        pot_transform = pot_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
-                                        .times(Mat4.scale(5,5,5));
-
-        const light_position = vec4(0, 0, 0, 1);
-        program_state.lights = [new Light(light_position, color(0,0,0), 1000)];
-        this.shapes.potsides.draw(context, program_state, pot_transform, this.materials.potsides);
+        const light_position = vec4(0, 10, 20, 1);
+        program_state.lights = [new Light(light_position, color(1,1,1,1), 500)];
+        this.draw_pot(context, program_state, model_transform);
+        this.draw_stovetop(context, program_state, model_transform);
 
     }
 }
@@ -264,7 +364,7 @@ class Ring_Shader extends Shader {
         return this.shared_glsl_code() + `
         void main(){
             float scalar = sin(15.0 * distance(point_position.xyz, center.xyz));
-            gl_FragColor = scalar * vec4(0.69, 0.502, 0.25, 1.0);
+            gl_FragColor = scalar * vec4(0.81, 0, 0, 1);
         }`;
     }
 }

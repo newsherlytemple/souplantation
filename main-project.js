@@ -1,7 +1,7 @@
 import {defs, tiny} from './examples/common.js';
 
 const {
-    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
+    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
 } = tiny;
 
 // new shape that creates a torus with a smaller ring size
@@ -38,13 +38,22 @@ export class Main_Project extends Scene {
             pottop: new smallTorus(10,100),
             burner: new defs.Torus(4,100),
 
+            counter1: new defs.Square(),
+            backsplash: new defs.Square()         
         };
 
+        //this.shapes.counter.arrays.texture_coord =
+        //    this.shapes.counter.arrays.texture_coord.map((vector) => vector.times(4));
+
+        //this.textures = {
+        //    granite: new Texture("assets/granite.jpg"),
+        //};
+
         // *** Materials
+        //const textured = new defs.Textured_Phong(1);
         this.materials = {
             test: new Material(new defs.Phong_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#89CFF0")}),
-
             // materials for pot + stovetop
             pot: new Material(new defs.Phong_Shader(),
                 {ambient: 0.4, diffusivity: 0.6, color: hex_color("#808080"), specularity: 1}),
@@ -53,8 +62,13 @@ export class Main_Project extends Scene {
             burnertop: new Material(new Gouraud_Shader(),
                 {ambient: 0.4, diffusivity: 0.6, color: hex_color("#495057")}),
             burner: new Material(new Ring_Shader(),
-                {ambient: 0.4, diffusivity: 0.6, color: hex_color("#d00000")})
-            }
+                {ambient: 0.4, diffusivity: 0.6, color: hex_color("#d00000")}),
+          
+            counter1: new Material(new defs.Textured_Phong(),
+                {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/granite.jpg")}),
+            backsplash: new Material(new Gouraud_Shader(),
+                {ambient: .4, diffusivity: .6, color: hex_color("#800080")}),
+    }
             
         this.initial_camera_location = Mat4.look_at(vec3(0, 15, 15), vec3(0, 0, 0), vec3(0, 1, 0));
     }
@@ -146,6 +160,20 @@ export class Main_Project extends Scene {
 
     }
 
+    background(context, program_state, model_transform) {
+        let counter1_transform = model_transform;
+        counter1_transform = counter1_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
+                                        .times(Mat4.scale(10,10,1))
+                                        .times(Mat4.translation(1.5,-.5,2.5));
+        this.shapes.counter1.draw(context, program_state, counter1_transform, this.materials.counter1);
+
+        let backsplash_transform = model_transform;
+        backsplash_transform = backsplash_transform.times(Mat4.rotation(Math.PI/2,0,0,1))
+                                        .times(Mat4.scale(10,100,1))
+                                        .times(Mat4.translation(0,0,-20));
+        this.shapes.backsplash.draw(context, program_state, backsplash_transform, this.materials.backsplash);
+    }
+
     display(context, program_state) {
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
@@ -166,6 +194,7 @@ export class Main_Project extends Scene {
         this.draw_pot(context, program_state, model_transform);
         this.draw_stovetop(context, program_state, model_transform);
 
+        this.background(context, program_state, model_transform);
     }
 }
 

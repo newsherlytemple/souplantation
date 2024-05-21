@@ -9,7 +9,7 @@ class smallTorus extends Shape {
     // Build a donut shape.  An example of a surface of revolution.
     constructor(rows, columns, texture_range=[[0, 1], [0, 1]]) {
         super("position", "normal", "texture_coord");
-        const circle_points = Array(rows).fill(vec3(1 / 28, 0, 0))
+        const circle_points = Array(rows).fill(vec3(1 / 30, 0, 0))
             .map((p, i, a) => Mat4.translation(-2 / 3, 0, 0)
                 .times(Mat4.rotation(i / (a.length - 1) * 2 * Math.PI, 0, -1, 0))
                 .times(Mat4.scale(1, 1, 3))
@@ -47,16 +47,16 @@ export class Main_Project extends Scene {
 
             // materials for pot + stovetop
             pot: new Material(new defs.Phong_Shader(),
-                {ambient: 0.4, diffusivity: 0.6, color: hex_color("#808080"), specularity: .1}),
+                {ambient: 0.4, diffusivity: 0.6, color: hex_color("#808080"), specularity: 1}),
             stovetop: new Material(new Gouraud_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#ffffff"), specularity: .8}),
+                {ambient: 1, diffusivity: .6, color: hex_color("#6c757d"), specularity: .01}),
             burnertop: new Material(new Gouraud_Shader(),
                 {ambient: 0.4, diffusivity: 0.6, color: hex_color("#495057")}),
             burner: new Material(new Ring_Shader(),
                 {ambient: 0.4, diffusivity: 0.6, color: hex_color("#d00000")})
             }
             
-        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
+        this.initial_camera_location = Mat4.look_at(vec3(0, 15, 15), vec3(0, 0, 0), vec3(0, 1, 0));
     }
 
     make_control_panel() {
@@ -161,11 +161,10 @@ export class Main_Project extends Scene {
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
         let model_transform = Mat4.identity();
 
-        const light_position = vec4(0, 0, 0, 1);
-        program_state.lights = [new Light(light_position, color(0,0,0), 1)];
+        const light_position = vec4(0, 10, 20, 1);
+        program_state.lights = [new Light(light_position, color(1,1,1,1), 500)];
         this.draw_pot(context, program_state, model_transform);
         this.draw_stovetop(context, program_state, model_transform);
-
 
     }
 }

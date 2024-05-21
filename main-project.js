@@ -42,7 +42,11 @@ export class Main_Project extends Scene {
             counter1: new defs.Square(),
             counter2: new defs.Square(),
             backsplash1: new defs.Square(),
-            backsplash2: new defs.Square()
+            backsplash2: new defs.Square(),
+
+            // shapes for soup ingredients
+            broth: new defs.Rounded_Capped_Cylinder(100, 100),
+            ingredient: new defs.Cube(0.5, 0.5)
         };
 
         // *** Materials
@@ -62,6 +66,36 @@ export class Main_Project extends Scene {
             // materials for counter + stovetop
             granite: new Material(new defs.Textured_Phong(),
                 {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/granite.jpg")}),
+            
+            // materials for soup
+            broth: new Material(new defs.Textured_Phong(),
+                {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/broth.png")}),
+            // broth: new Material(new defs.Phong_Shader(),
+            //     {ambient: .4, diffusivity: .6, color: hex_color("#e9cb45")}),
+
+            carrot: new Material(new defs.Textured_Phong(),
+                {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/carrot.png")}),
+            // carrot: new Material(new Gouraud_Shader(),
+            // {ambient: 1, diffusivity: .6, color: hex_color("#f17d3a"), specularity: .01}),
+
+            beef: new Material(new defs.Textured_Phong(),
+                {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/beef.png")}),
+
+            chicken: new Material(new defs.Textured_Phong(),
+                {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/chicken.png")}),
+            
+            mushroom: new Material(new defs.Textured_Phong(),
+                {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/mushroom.png")}),
+            
+            celery: new Material(new defs.Textured_Phong(),
+                {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/celery.png")}),
+                
+            pasta: new Material(new defs.Textured_Phong(),
+                {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/pasta.png")}),
+
+            potato: new Material(new defs.Textured_Phong(),
+                {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/potato4.png")}),
+
     }
             
         this.initial_camera_location = Mat4.look_at(vec3(0, 15, 15), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -181,6 +215,72 @@ export class Main_Project extends Scene {
         this.shapes.backsplash2.draw(context, program_state, backsplash2_transform, this.materials.granite);
     }
 
+    draw_broth(context, program_state, model_transform) {
+        let broth_transform = model_transform;
+        broth_transform = broth_transform.times(Mat4.rotation(Math.PI/2, 1, 0, 0))
+                                         .times(Mat4.scale(5, 5, 4))
+                                         .times(Mat4.translation(0, 0, 0.25));
+        this.shapes.broth.draw(context, program_state, broth_transform, this.materials.broth);
+    }
+
+    draw_carrot(context, program_state, model_transform,) {
+        let carrot_transform = model_transform;
+        carrot_transform = carrot_transform.times(Mat4.scale(0.5, 0.5, 0.5))
+                                            .times(Mat4.translation(0, 3, 0));
+                                            
+        this.shapes.ingredient.draw(context, program_state, carrot_transform, this.materials.carrot);
+    }
+    draw_beef(context, program_state, model_transform) {
+        let beef_transform = model_transform;
+        beef_transform = beef_transform.times(Mat4.scale(0.5, 0.5, 0.5))
+                                            .times(Mat4.translation(3, 3, 0));
+                                            
+        this.shapes.ingredient.draw(context, program_state, beef_transform, this.materials.beef);
+    }
+
+    draw_chicken(context, program_state, model_transform) {
+        let chicken_transform = model_transform;
+        chicken_transform = chicken_transform.times(Mat4.scale(0.5, 0.5, 0.5))
+                                            .times(Mat4.translation(0, 3, 3));
+                                            
+        this.shapes.ingredient.draw(context, program_state, chicken_transform, this.materials.chicken);
+    }
+
+    draw_mushroom(context, program_state, model_transform) {
+        let mushroom_transform = model_transform;
+        mushroom_transform = mushroom_transform.times(Mat4.scale(0.5, 0.5, 0.5))
+                                            .times(Mat4.translation(3, 3, 3));
+                                            
+        this.shapes.ingredient.draw(context, program_state, mushroom_transform, this.materials.mushroom);
+    }
+
+    draw_celery(context, program_state, model_transform) {
+        let celery_transform = model_transform;
+        celery_transform = celery_transform.times(Mat4.scale(0.5, 0.5, 0.5))
+                                            .times(Mat4.translation(-3, 3, 3));
+                                            
+        this.shapes.ingredient.draw(context, program_state, celery_transform, this.materials.celery);
+    }
+
+    draw_pasta(context, program_state, model_transform) {
+        let pasta_transform = model_transform;
+        pasta_transform = pasta_transform.times(Mat4.scale(0.5, 0.5, 0.5))
+                                            .times(Mat4.translation(-3, 3, 0));
+                                            
+        this.shapes.ingredient.draw(context, program_state, pasta_transform, this.materials.pasta);
+    }
+
+    draw_potato(context, program_state, model_transform) {
+        let potato_transform = model_transform;
+        potato_transform = potato_transform.times(Mat4.scale(0.5, 0.5, 0.5))
+                                            .times(Mat4.translation(-6, 3, 0));
+                                            
+        this.shapes.ingredient.draw(context, program_state, potato_transform, this.materials.potato);
+    }
+    
+    
+
+
     display(context, program_state) {
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
@@ -202,6 +302,15 @@ export class Main_Project extends Scene {
         this.draw_stovetop(context, program_state, model_transform);
 
         this.draw_background(context, program_state, model_transform);
+
+        this.draw_broth(context, program_state, model_transform);
+        this.draw_carrot(context, program_state, model_transform);
+        this.draw_beef(context, program_state, model_transform);
+        this.draw_chicken(context, program_state, model_transform);
+        this.draw_mushroom(context, program_state, model_transform);
+        this.draw_celery(context, program_state, model_transform);
+        this.draw_pasta(context, program_state, model_transform);
+        this.draw_potato(context, program_state, model_transform);
     }
 }
 

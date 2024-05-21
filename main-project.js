@@ -38,19 +38,14 @@ export class Main_Project extends Scene {
             pottop: new smallTorus(10,100),
             burner: new defs.Torus(4,100),
 
+            // shapes for counter + backsplash
             counter1: new defs.Square(),
-            backsplash: new defs.Square()         
+            counter2: new defs.Square(),
+            backsplash1: new defs.Square(),
+            backsplash2: new defs.Square()
         };
 
-        //this.shapes.counter.arrays.texture_coord =
-        //    this.shapes.counter.arrays.texture_coord.map((vector) => vector.times(4));
-
-        //this.textures = {
-        //    granite: new Texture("assets/granite.jpg"),
-        //};
-
         // *** Materials
-        //const textured = new defs.Textured_Phong(1);
         this.materials = {
             test: new Material(new defs.Phong_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#89CFF0")}),
@@ -64,10 +59,9 @@ export class Main_Project extends Scene {
             burner: new Material(new Ring_Shader(),
                 {ambient: 0.4, diffusivity: 0.6, color: hex_color("#d00000")}),
           
-            counter1: new Material(new defs.Textured_Phong(),
+            // materials for counter + stovetop
+            granite: new Material(new defs.Textured_Phong(),
                 {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/granite.jpg")}),
-            backsplash: new Material(new Gouraud_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#800080")}),
     }
             
         this.initial_camera_location = Mat4.look_at(vec3(0, 15, 15), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -160,18 +154,31 @@ export class Main_Project extends Scene {
 
     }
 
-    background(context, program_state, model_transform) {
+    // draw the background
+    draw_background(context, program_state, model_transform) {
+        // counter
         let counter1_transform = model_transform;
         counter1_transform = counter1_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
-                                        .times(Mat4.scale(10,10,1))
-                                        .times(Mat4.translation(1.5,-.5,2.5));
-        this.shapes.counter1.draw(context, program_state, counter1_transform, this.materials.counter1);
+                                        .times(Mat4.scale(15,15,1))
+                                        .times(Mat4.translation(1.5,-.5,4.75));
+        this.shapes.counter1.draw(context, program_state, counter1_transform, this.materials.granite);
+        let counter2_transform = model_transform;
+        counter2_transform = counter2_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
+                                        .times(Mat4.scale(15,15,1))
+                                        .times(Mat4.translation(-2,-.5,4.75));
+        this.shapes.counter2.draw(context, program_state, counter2_transform, this.materials.granite);
 
-        let backsplash_transform = model_transform;
-        backsplash_transform = backsplash_transform.times(Mat4.rotation(Math.PI/2,0,0,1))
-                                        .times(Mat4.scale(10,100,1))
-                                        .times(Mat4.translation(0,0,-20));
-        this.shapes.backsplash.draw(context, program_state, backsplash_transform, this.materials.backsplash);
+        // backsplash
+        let backsplash1_transform = model_transform;
+        backsplash1_transform = backsplash1_transform.times(Mat4.rotation(Math.PI/2,0,0,1))
+                                        .times(Mat4.scale(15,15,1))
+                                        .times(Mat4.translation(0,-1,-19.5));
+        this.shapes.backsplash1.draw(context, program_state, backsplash1_transform, this.materials.granite);
+        let backsplash2_transform = model_transform;
+        backsplash2_transform = backsplash2_transform.times(Mat4.rotation(Math.PI/2,0,0,1))
+                                        .times(Mat4.scale(15,15,1))
+                                        .times(Mat4.translation(0,1,-19.5));
+        this.shapes.backsplash2.draw(context, program_state, backsplash2_transform, this.materials.granite);
     }
 
     display(context, program_state) {
@@ -194,7 +201,7 @@ export class Main_Project extends Scene {
         this.draw_pot(context, program_state, model_transform);
         this.draw_stovetop(context, program_state, model_transform);
 
-        this.background(context, program_state, model_transform);
+        this.draw_background(context, program_state, model_transform);
     }
 }
 

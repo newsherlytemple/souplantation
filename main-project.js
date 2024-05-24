@@ -18,10 +18,66 @@ class smallTorus extends Shape {
     }
 }
 
+const taken_pos = new Set();
+
+function pos_to_string(x, y, z) {
+    return `${x},${y},${z}`;
+}
+
+function random_position() {
+    let x, y, z, pos;
+    do {
+        x = Math.floor(Math.random() * (18 + 1)) - 9;
+        y = Math.floor(Math.random() * (2.5 - 1.2)) + 1.2;
+        z = Math.floor(Math.random() * (18 + 1)) - 9;
+
+        pos = pos_to_string(x, y, z);
+    } while ((x * x + z * z > 81) || taken_pos.has(pos));
+    taken_pos.add(pos);
+    return vec3(x, y, z);
+}
+
+const initial_ingredients = [
+    { type: 'carrot', position: random_position() },
+    { type: 'celery', position: random_position() },
+    { type: 'chicken', position: random_position() },
+    { type: 'pasta', position: random_position() },
+    { type: 'mushroom', position: random_position() },
+];
+
+class Ingredients {
+    constructor (initial_ingredients) {
+        this.ingredients = initial_ingredients;
+        // for (let index = 0; index < this.ingredients.length; index++) {
+        //     console.log(this.ingredients[index]);
+        //     console.log(this.ingredients[index].type);
+        //     console.log(this.ingredients[index].position[0]);
+        // }
+    }
+
+    add_ingredient(type, position) {
+        this.ingredients.push({ type, position });
+    }
+
+    remove_ingredient(type) {
+        const index = this.ingredients.findIndex(ingredient => ingredient.type === type);
+        if (index !== -1) {
+            this.ingredients.splice(index, 1);
+        }
+    }
+
+    get_Ingredients() {
+        return this.ingredients;
+    }
+}
+
+
 export class Main_Project extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
+
+        this.ingredients = new Ingredients(initial_ingredients);
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
@@ -42,7 +98,11 @@ export class Main_Project extends Scene {
             counter1: new defs.Square(),
             counter2: new defs.Square(),
             backsplash1: new defs.Square(),
-            backsplash2: new defs.Square()
+            backsplash2: new defs.Square(),
+
+            // shapes for soup ingredients
+            broth: new defs.Rounded_Capped_Cylinder(100, 100),
+            ingredient: new defs.Cube(0.5, 0.5)
         };
 
         // *** Materials
@@ -62,24 +122,106 @@ export class Main_Project extends Scene {
             // materials for counter + stovetop
             granite: new Material(new defs.Textured_Phong(),
                 {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/granite.jpg")}),
-    }
+            
+            // materials for soup
+            broth: new Material(new defs.Textured_Phong(),
+                {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/broth.png")}),
+            // broth: new Material(new defs.Phong_Shader(),
+            //     {ambient: .4, diffusivity: .6, color: hex_color("#e9cb45")}),
+
+            carrot: new Material(new defs.Textured_Phong(),
+                {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/carrot.png")}),
+            // carrot: new Material(new Gouraud_Shader(),
+            // {ambient: 1, diffusivity: .6, color: hex_color("#f17d3a"), specularity: .01}),
+
+            beef: new Material(new defs.Textured_Phong(),
+                {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/beef.png")}),
+
+            chicken: new Material(new defs.Textured_Phong(),
+                {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/chicken.png")}),
+            
+            mushroom: new Material(new defs.Textured_Phong(),
+                {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/mushroom2.png")}),
+            
+            celery: new Material(new defs.Textured_Phong(),
+                {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/celery.png")}),
+                
+            pasta: new Material(new defs.Textured_Phong(),
+                {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/pasta2.png")}),
+
+            potato: new Material(new defs.Textured_Phong(),
+                {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/potato4.png")})
+        
+    };
             
         this.initial_camera_location = Mat4.look_at(vec3(0, 15, 15), vec3(0, 0, 0), vec3(0, 1, 0));
     }
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        this.key_triggered_button("Add Carrots", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
+        this.key_triggered_button("Add Carrots", ["Control", "0"], () => this.attached = () => {
+            const position = this.random_position();
+            this.Ingredients.add_ingredient('carrot', position);
+        });
         this.new_line();
-        this.key_triggered_button("Add Potatoes", ["Control", "1"], () => this.attached = () => this.p1);
-        this.key_triggered_button("Add Chicken", ["Control", "2"], () => this.attached = () => this.p2);
+
+        // this.key_triggered_button("Add Potatoes", ["Control", "1"], () => this.attached = () => {
+        //     const position = this.random_position();
+        //     this.Ingredients.add_ingredient("potato", position);
+        //     this.p1;
+        // });
+
+        this.key_triggered_button("Add Chicken", ["Control", "1"], () => this.attached = () => {
+            const position = this.random_position();
+            this.Ingredients.add_ingredient('chicken', position);            
+        });
         this.new_line();
-        this.key_triggered_button("Remove Carrots", ["Control", "3"], () => this.attached = () => this.p3);
-        this.key_triggered_button("Remove Potatoes", ["Control", "4"], () => this.attached = () => this.p4);
+
+        this.key_triggered_button("Add Celery", ["Control", "2"], () => this.attached = () => {
+            const position = this.random_position();
+            this.Ingredients.add_ingredient('celery', position);
+        });
         this.new_line();
-        this.key_triggered_button("Remove Chicken", ["Control", "5"], () => this.attached = () => this.moon);
+
+        this.key_triggered_button("Add Mushroom", ["Control", "3"], () => this.attached = () => {
+            const position = this.random_position();
+            this.Ingredients.add_ingredient('mushroom', position);
+        });
+        this.new_line();
+
+        this.key_triggered_button("Add Pasta", ["Control", "4"], () => this.attached = () => {
+            const position = this.random_position();
+            this.Ingredients.add_ingredient("pasta", position);
+        });
+        this.new_line();
+
+        this.key_triggered_button("Remove Carrots", ["Control", "5"], () => this.attached = () => {
+            this.ingredientManager.removeIngredient("carrot");
+        });
+        this.new_line(); 
+
+        this.key_triggered_button("Remove Chicken", ["Control", "6"], () => this.attached = () => {
+            this.ingredientManager.removeIngredient("chicken");
+        });
+        this.new_line();
+
+        this.key_triggered_button("Remove Celery", ["Control", "7"], () => this.attached = () => {
+            this.ingredientManager.removeIngredient("celery");
+        });
+        this.new_line();
+
+        this.key_triggered_button("Remove Pasta", ["Control", "8"], () => this.attached = () => {
+            this.ingredientManager.removeIngredient("pasta");
+        });
+        this.new_line();
+
+        this.key_triggered_button("Remove Mushroom", ["Control", "9"], () => this.attached = () => {
+            this.ingredientManager.removeIngredient("mushroom");
+        });
+        this.new_line();
     }
 
+    
     // draw the pot
     draw_pot(context, program_state, model_transform){
         let pot_trans = model_transform;
@@ -181,6 +323,47 @@ export class Main_Project extends Scene {
         this.shapes.backsplash2.draw(context, program_state, backsplash2_transform, this.materials.granite);
     }
 
+    draw_broth(context, program_state, model_transform) {
+        let broth_transform = model_transform;
+        broth_transform = broth_transform.times(Mat4.rotation(Math.PI/2, 1, 0, 0))
+                                         .times(Mat4.scale(5, 5, 4))
+                                         .times(Mat4.translation(0, 0, 0.25));
+        this.shapes.broth.draw(context, program_state, broth_transform, this.materials.broth);
+    }
+
+    draw_ingredient(context, program_state, model_transform, ingredient) {
+        // console.log(ingredient)
+        // console.log(ingredient.type);
+        let ingredient_transform = model_transform;
+        let material;
+        // console.log(ingredient.position);
+        let x = ingredient.position[0];
+        let y = ingredient.position[1];
+        let z = ingredient.position[2];
+
+        ingredient_transform = ingredient_transform.times(Mat4.scale(0.5, 0.5, 0.5))
+                                                    .times(Mat4.translation(x, y, z));
+        switch(ingredient.type) {
+            case "carrot":
+                material = this.materials.carrot;
+                break;
+            case "chicken":
+                material = this.materials.chicken;
+                break;
+            case "pasta":
+                material = this.materials.pasta;
+                break;
+            case "mushroom":
+                material = this.materials.mushroom;
+                break;
+            case "celery":
+                material = this.materials.celery;
+                break;
+        }
+    
+        this.shapes.ingredient.draw(context, program_state, ingredient_transform, material)
+    }
+    
     display(context, program_state) {
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
@@ -202,6 +385,15 @@ export class Main_Project extends Scene {
         this.draw_stovetop(context, program_state, model_transform);
 
         this.draw_background(context, program_state, model_transform);
+
+
+        this.draw_broth(context, program_state, model_transform);
+
+        const ingredients = this.ingredients.get_Ingredients();
+        for (const ingredient of ingredients) {
+            this.draw_ingredient(context, program_state, model_transform, ingredient);
+        }
+
     }
 }
 

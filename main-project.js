@@ -56,6 +56,8 @@ class Ingredients {
     }
 
     add_ingredient(type, position) {
+        console.log(type);
+        console.log(position);
         this.ingredients.push({ type, position });
     }
 
@@ -159,9 +161,9 @@ export class Main_Project extends Scene {
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        this.key_triggered_button("Add Carrots", ["Control", "0"], () => this.attached = () => {
-            const position = this.random_position();
-            this.Ingredients.add_ingredient('carrot', position);
+        this.key_triggered_button("Add Carrots", ["Control", "0"], () => {
+            const position = random_position();
+            this.ingredients.add_ingredient('carrot', position);
         });
         this.new_line();
 
@@ -171,52 +173,63 @@ export class Main_Project extends Scene {
         //     this.p1;
         // });
 
-        this.key_triggered_button("Add Chicken", ["Control", "1"], () => this.attached = () => {
-            const position = this.random_position();
-            this.Ingredients.add_ingredient('chicken', position);            
+        this.key_triggered_button("Add Chicken", ["Control", "1"], () => {
+            const position = random_position();
+            this.ingredients.add_ingredient('chicken', position);     
+            this.display();       
         });
         this.new_line();
 
-        this.key_triggered_button("Add Celery", ["Control", "2"], () => this.attached = () => {
-            const position = this.random_position();
-            this.Ingredients.add_ingredient('celery', position);
+        this.key_triggered_button("Add Celery", ["Control", "2"], () => {
+            const position = random_position();
+            this.ingredients.add_ingredient('celery', position);
+            this.display();       
+
         });
         this.new_line();
 
-        this.key_triggered_button("Add Mushroom", ["Control", "3"], () => this.attached = () => {
-            const position = this.random_position();
-            this.Ingredients.add_ingredient('mushroom', position);
+        this.key_triggered_button("Add Mushroom", ["Control", "3"], () => {
+            const position = random_position();
+            this.ingredients.add_ingredient('mushroom', position);
+            this.display();       
+
         });
         this.new_line();
 
-        this.key_triggered_button("Add Pasta", ["Control", "4"], () => this.attached = () => {
-            const position = this.random_position();
-            this.Ingredients.add_ingredient("pasta", position);
+        this.key_triggered_button("Add Pasta", ["Control", "4"], () => {
+            const position = random_position();
+            this.ingredients.add_ingredient("pasta", position);
+            this.display();
         });
         this.new_line();
 
-        this.key_triggered_button("Remove Carrots", ["Control", "5"], () => this.attached = () => {
-            this.ingredientManager.removeIngredient("carrot");
+        this.key_triggered_button("Remove Carrots", ["Control", "5"], () => {
+            this.ingredients.remove_ingredient("carrot");
+            this.display();
         });
         this.new_line(); 
 
-        this.key_triggered_button("Remove Chicken", ["Control", "6"], () => this.attached = () => {
-            this.ingredientManager.removeIngredient("chicken");
+        this.key_triggered_button("Remove Chicken", ["Control", "6"], () => {
+            this.ingredients.remove_ingredient("chicken");
+            this.display();
         });
         this.new_line();
 
-        this.key_triggered_button("Remove Celery", ["Control", "7"], () => this.attached = () => {
-            this.ingredientManager.removeIngredient("celery");
+        this.key_triggered_button("Remove Celery", ["Control", "7"], () => {
+            this.ingredients.remove_ingredient("celery");
+            this.display();
         });
         this.new_line();
 
-        this.key_triggered_button("Remove Pasta", ["Control", "8"], () => this.attached = () => {
-            this.ingredientManager.removeIngredient("pasta");
+        this.key_triggered_button("Remove Pasta", ["Control", "8"], () => {
+            this.ingredients.remove_ingredient("pasta");
+            this.display();
         });
         this.new_line();
 
-        this.key_triggered_button("Remove Mushroom", ["Control", "9"], () => this.attached = () => {
-            this.ingredientManager.removeIngredient("mushroom");
+        this.key_triggered_button("Remove Mushroom", ["Control", "9"], () => {
+            this.ingredients.remove_ingredient("mushroom");
+            this.display();
         });
         this.new_line();
     }

@@ -27,59 +27,63 @@ function pos_to_string(x, y, z) {
 function random_position() {
     let x, y, z, pos;
     do {
-        x = Math.floor(Math.random() * (18 + 1)) - 9;
-        y = Math.floor(Math.random() * (2.5 - 1.2)) + 1.2;
-        z = Math.floor(Math.random() * (18 + 1)) - 9;
+        x = Math.floor(Math.random() * 6 - 3);
+        y = Math.floor(Math.random() * (1.75 - 1.2)) + 1.2;
+        z = Math.floor(Math.random() * 6 - 3);
 
         pos = pos_to_string(x, y, z);
-    } while ((x * x + z * z > 81) || taken_pos.has(pos));
+    } while ((x * x + z * z > 9) || taken_pos.has(pos));
     taken_pos.add(pos);
     return vec3(x, y, z);
 }
 
-const initial_ingredients = [
-    { type: 'carrot', position: random_position() },
-    { type: 'celery', position: random_position() },
-    { type: 'chicken', position: random_position() },
-    { type: 'pasta', position: random_position() },
-    { type: 'mushroom', position: random_position() },
-];
+// const taken_offset = new Set();
 
-class Ingredients {
-    constructor (initial_ingredients) {
-        this.ingredients = initial_ingredients;
-        // for (let index = 0; index < this.ingredients.length; index++) {
-        //     console.log(this.ingredients[index]);
-        //     console.log(this.ingredients[index].type);
-        //     console.log(this.ingredients[index].position[0]);
-        // }
+// function random_offset() {
+//     let x2, y2, z2, offset:
+//     do {
+//         x = Math.floor(Math.random() -3);
+//         y = Math.floor(Math.random() * (1.75 - 1.2)) + 1.2;
+//         z = Math.floor(Math.random() * 6 - 3);
+
+//         offset = pos_to_string(x, y, z);
+//     } while (taken_offset.has(offset));
+//     taken_offset.add(offset);
+//     return vec3(x2, y2, z2);
+// }
+
+function generate_positions() {
+    let coordinates = [];
+    for (var i = 0; i <= 26; i++) {
+        let position = random_position();
+        coordinates[i] = position;
     }
+    return coordinates;
+}
 
-    add_ingredient(type, position) {
-        console.log(type);
-        console.log(position);
-        this.ingredients.push({ type, position });
-    }
-
-    remove_ingredient(type) {
-        const index = this.ingredients.findIndex(ingredient => ingredient.type === type);
-        if (index !== -1) {
-            this.ingredients.splice(index, 1);
-        }
-    }
-
-    get_Ingredients() {
-        return this.ingredients;
+class Ingredient {
+    constructor(type) {
+        this.type = type;
     }
 }
 
 
+
 export class Main_Project extends Scene {
     constructor() {
-        // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
-
-        this.ingredients = new Ingredients(initial_ingredients);
+        // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
+        this.coordinates = generate_positions();
+        this.carrot = false;
+        this.chicken = false;
+        this.celery = false;
+        this.mushroom = false;
+        this.pasta = false;
+        this.carrots = [];
+        this.chickens = [];
+        this.celerys = [];
+        this.pastas = [];
+        this.mushrooms = [];
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
@@ -128,13 +132,11 @@ export class Main_Project extends Scene {
             // materials for soup
             broth: new Material(new defs.Textured_Phong(),
                 {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/broth.png")}),
-            // broth: new Material(new defs.Phong_Shader(),
-            //     {ambient: .4, diffusivity: .6, color: hex_color("#e9cb45")}),
 
             carrot: new Material(new defs.Textured_Phong(),
                 {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/carrot.png")}),
             // carrot: new Material(new Gouraud_Shader(),
-            // {ambient: 1, diffusivity: .6, color: hex_color("#f17d3a"), specularity: .01}),
+            // {ambient: 1, diffusivity: .6, specularity: .01, texture: new Texture("assets/carrot.png")}),
 
             beef: new Material(new defs.Textured_Phong(),
                 {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/beef.png")}),
@@ -162,74 +164,78 @@ export class Main_Project extends Scene {
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
         this.key_triggered_button("Add Carrots", ["Control", "0"], () => {
-            const position = random_position();
-            this.ingredients.add_ingredient('carrot', position);
+            const carrot = new Ingredient('carrot');
+            this.carrots.push(carrot);
+            this.carrot = true;
+            if (this.carrots.length > 5) {
+                this.carrots.length = 5;
+            }
         });
         this.new_line();
 
-        // this.key_triggered_button("Add Potatoes", ["Control", "1"], () => this.attached = () => {
-        //     const position = this.random_position();
-        //     this.Ingredients.add_ingredient("potato", position);
-        //     this.p1;
-        // });
-
         this.key_triggered_button("Add Chicken", ["Control", "1"], () => {
-            const position = random_position();
-            this.ingredients.add_ingredient('chicken', position);     
-            this.display();       
+            const chicken = new Ingredient('chicken');
+            this.chickens.push(chicken);
+            this.chicken = true;
+            if (this.chickens.length > 5) {
+                this.chickens.length = 5;
+            }
         });
         this.new_line();
 
         this.key_triggered_button("Add Celery", ["Control", "2"], () => {
-            const position = random_position();
-            this.ingredients.add_ingredient('celery', position);
-            this.display();       
-
+            const celery = new Ingredient('celery');
+            this.celerys.push(celery);
+            this.celery = true;
+            if (this.celerys.length > 5) {
+                this.celerys.length = 5;
+            }
         });
         this.new_line();
 
         this.key_triggered_button("Add Mushroom", ["Control", "3"], () => {
-            const position = random_position();
-            this.ingredients.add_ingredient('mushroom', position);
-            this.display();       
-
+            const mushroom = new Ingredient('mushroom');
+            this.mushrooms.push(mushroom);
+            this.mushroom = true;
+            if (this.mushrooms.length > 5) {
+                this.mushrooms.length = 5;
+            }
         });
         this.new_line();
 
         this.key_triggered_button("Add Pasta", ["Control", "4"], () => {
-            const position = random_position();
-            this.ingredients.add_ingredient("pasta", position);
-            this.display();
+            const pasta = new Ingredient('pasta');
+            this.pastas.push(pasta);
+            this.pasta = true;
+            if (this.pastas.length > 5) {
+                this.pastas.length = 5;
+            }
+
         });
         this.new_line();
 
         this.key_triggered_button("Remove Carrots", ["Control", "5"], () => {
-            this.ingredients.remove_ingredient("carrot");
-            this.display();
+            this.carrots.pop();
         });
         this.new_line(); 
 
         this.key_triggered_button("Remove Chicken", ["Control", "6"], () => {
-            this.ingredients.remove_ingredient("chicken");
-            this.display();
+            this.chickens.pop();
         });
         this.new_line();
 
         this.key_triggered_button("Remove Celery", ["Control", "7"], () => {
-            this.ingredients.remove_ingredient("celery");
-            this.display();
+            this.celerys.pop();
         });
         this.new_line();
 
         this.key_triggered_button("Remove Pasta", ["Control", "8"], () => {
-            this.ingredients.remove_ingredient("pasta");
-            this.display();
+            this.pastas.pop();
         });
         this.new_line();
 
         this.key_triggered_button("Remove Mushroom", ["Control", "9"], () => {
-            this.ingredients.remove_ingredient("mushroom");
-            this.display();
+            this.mushrooms.pop();
         });
         this.new_line();
     }
@@ -310,7 +316,7 @@ export class Main_Project extends Scene {
     }
 
     // draw the background
-    draw_background(context, program_state, model_transform) {
+    draw_background(context, program_state, model_transform, dt) {
         // counter
         let counter1_transform = model_transform;
         counter1_transform = counter1_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
@@ -343,39 +349,6 @@ export class Main_Project extends Scene {
                                          .times(Mat4.translation(0, 0, 0.25));
         this.shapes.broth.draw(context, program_state, broth_transform, this.materials.broth);
     }
-
-    draw_ingredient(context, program_state, model_transform, ingredient) {
-        // console.log(ingredient)
-        // console.log(ingredient.type);
-        let ingredient_transform = model_transform;
-        let material;
-        // console.log(ingredient.position);
-        let x = ingredient.position[0];
-        let y = ingredient.position[1];
-        let z = ingredient.position[2];
-
-        ingredient_transform = ingredient_transform.times(Mat4.scale(0.5, 0.5, 0.5))
-                                                    .times(Mat4.translation(x, y, z));
-        switch(ingredient.type) {
-            case "carrot":
-                material = this.materials.carrot;
-                break;
-            case "chicken":
-                material = this.materials.chicken;
-                break;
-            case "pasta":
-                material = this.materials.pasta;
-                break;
-            case "mushroom":
-                material = this.materials.mushroom;
-                break;
-            case "celery":
-                material = this.materials.celery;
-                break;
-        }
-    
-        this.shapes.ingredient.draw(context, program_state, ingredient_transform, material)
-    }
     
     display(context, program_state) {
         // display():  Called once per frame of animation.
@@ -399,14 +372,356 @@ export class Main_Project extends Scene {
 
         this.draw_background(context, program_state, model_transform);
 
+        let broth_transform = model_transform;
+        broth_transform = broth_transform.times(Mat4.rotation(t, 0,1,0));
+        this.draw_broth(context, program_state, broth_transform);
 
-        this.draw_broth(context, program_state, model_transform);
 
-        const ingredients = this.ingredients.get_Ingredients();
-        for (const ingredient of ingredients) {
-            this.draw_ingredient(context, program_state, model_transform, ingredient);
+     
+
+        const period = 10;
+        const quarter = period / 4;
+
+        const curr_quarter = t % quarter;
+        const half_quarter = quarter / 2;
+
+        const speed = Math.PI / (2 * curr_quarter);
+
+        const offsets = [
+            0, 
+            0.019634954084936208,
+            0.039269908169872416, 
+            0.058904862254808624, 
+            0.07853981633974483, 
+            0.09817477042468103, 
+            0.11780972450961724, 
+            0.13744467859455344, 
+            0.15707963267948966, 
+            0.17671458676442585, 
+            0.19634954084936207, 
+            0.21598449493429826, 
+            0.23561944901923448, 
+            0.25525440310417066, 
+            0.2748893571891069, 
+            0.2945243112740431, 
+            0.3141592653589793, 
+            0.3337942194439155, 
+            0.3534291735288517, 
+            0.3730641276137879
+        ];
+
+
+        // calculate angle based on offset
+        const total_length = this.carrots.length + this.chickens.length + this.celerys.length + this.pastas.length + this.mushrooms.length
+        const initial_angle = offsets[total_length % offsets.length];
+        
+        // use initial angle to determine starting position
+        let angle = initial_angle + speed * dt;
+        
+        if (curr_quarter < half_quarter) {
+            // move forwards for first half of orbit
+            angle = Math.PI / 2 * (curr_quarter / half_quarter)
+        } else {
+            // move backwards for second half of orbit
+            angle = Math.PI / 2 * ((half_quarter - (curr_quarter - half_quarter)) / half_quarter)
         }
 
+        //carrots 
+        var carrot1_trans = model_transform;
+        const c1 = this.coordinates[0];
+        carrot1_trans = carrot1_trans.times(Mat4.rotation(angle/4, 0, 1, 0))
+                                     .times(Mat4.translation(c1[0], c1[1], c1[2]))
+                                     .times(Mat4.scale(0.5, 0.5, 0.5));
+
+        var carrot2_trans = model_transform;
+        const c2 = this.coordinates[1];
+        carrot2_trans = carrot2_trans.times(Mat4.rotation(angle/4, 0, 1, 0))
+                                    .times(Mat4.translation(c2[0], c2[1], c2[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+        
+        var carrot3_trans = model_transform;
+        const c3 = this.coordinates[6];
+        carrot3_trans = carrot3_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
+                                    .times(Mat4.translation(c3[0], c3[1], c3[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+        var carrot4_trans = model_transform;
+        const c4 = this.coordinates[10];
+        carrot4_trans = carrot4_trans.times(Mat4.rotation(angle/4, 0, 1, 0))
+                                        .times(Mat4.translation(c4[0], c4[1], c4[2]))
+                                        .times(Mat4.scale(0.5, 0.5, 0.5));
+
+        var carrot5_trans = model_transform;
+        const c5 = this.coordinates[5];
+        carrot5_trans = carrot5_trans.times(Mat4.rotation(angle/4, 0, 1, 0))
+                                    .times(Mat4.translation(c5[0], c5[1], c5[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+
+        if (this.carrots.length === 1) {
+                this.shapes.ingredient.draw(context, program_state, carrot1_trans, this.materials.carrot); 
+        }  
+        if (this.carrots.length === 2) {
+                this.shapes.ingredient.draw(context, program_state, carrot1_trans, this.materials.carrot);
+                this.shapes.ingredient.draw(context, program_state, carrot2_trans, this.materials.carrot); 
+        }
+        if (this.carrots.length === 3) {
+            this.shapes.ingredient.draw(context, program_state, carrot1_trans, this.materials.carrot);
+            this.shapes.ingredient.draw(context, program_state, carrot2_trans, this.materials.carrot); 
+            this.shapes.ingredient.draw(context, program_state, carrot3_trans, this.materials.carrot); 
+        }
+        if (this.carrots.length === 4) {
+            this.shapes.ingredient.draw(context, program_state, carrot1_trans, this.materials.carrot);
+            this.shapes.ingredient.draw(context, program_state, carrot2_trans, this.materials.carrot); 
+            this.shapes.ingredient.draw(context, program_state, carrot3_trans, this.materials.carrot);
+            this.shapes.ingredient.draw(context, program_state, carrot4_trans, this.materials.carrot); 
+        }
+        if (this.carrots.length >= 5) {
+            this.shapes.ingredient.draw(context, program_state, carrot1_trans, this.materials.carrot);
+            this.shapes.ingredient.draw(context, program_state, carrot2_trans, this.materials.carrot); 
+            this.shapes.ingredient.draw(context, program_state, carrot3_trans, this.materials.carrot); 
+            this.shapes.ingredient.draw(context, program_state, carrot4_trans, this.materials.carrot); 
+            this.shapes.ingredient.draw(context, program_state, carrot5_trans, this.materials.carrot); 
+        }
+
+        //chicken 
+        var chicken1_trans = model_transform;
+        const ch1 = this.coordinates[2]
+        chicken1_trans = chicken1_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
+                                    .times(Mat4.translation(ch1[0], ch1[1], ch1[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+
+        var chicken2_trans = model_transform;
+        const ch2 = this.coordinates[8];
+        chicken2_trans = chicken2_trans.times(Mat4.rotation(-angle/6, 0, 1, 0))
+                                    .times(Mat4.translation(ch2[0], ch2[1], ch2[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+
+        var chicken3_trans = model_transform;
+        const ch3 = this.coordinates[20];
+        chicken3_trans = chicken3_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
+                                    .times(Mat4.translation(ch3[0], ch3[1], ch3[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+        
+        var chicken4_trans = model_transform;
+        const ch4 = this.coordinates[13]
+        chicken4_trans = chicken4_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
+                                    .times(Mat4.translation(ch4[0], ch4[1], ch4[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+
+        var chicken5_trans = model_transform;
+        const ch5 = this.coordinates[4]
+        chicken5_trans = chicken5_trans.times(Mat4.rotation(-angle/6, 0, 1, 0))
+                                    .times(Mat4.translation(ch5[0], ch5[1], ch5[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+                            
+
+        if (this.chickens.length === 1) {
+            this.shapes.ingredient.draw(context, program_state, chicken1_trans, this.materials.chicken); 
+        }  
+        if (this.chickens.length === 2) {
+            this.shapes.ingredient.draw(context, program_state, chicken1_trans, this.materials.chicken);
+            this.shapes.ingredient.draw(context, program_state, chicken2_trans, this.materials.chicken); 
+        }
+        if (this.chickens.length === 3) {
+            this.shapes.ingredient.draw(context, program_state, chicken1_trans, this.materials.chicken);
+            this.shapes.ingredient.draw(context, program_state, chicken2_trans, this.materials.chicken); 
+            this.shapes.ingredient.draw(context, program_state, chicken3_trans, this.materials.chicken); 
+
+        }
+        if (this.chickens.length === 4) {
+            this.shapes.ingredient.draw(context, program_state, chicken1_trans, this.materials.chicken);
+            this.shapes.ingredient.draw(context, program_state, chicken2_trans, this.materials.chicken); 
+            this.shapes.ingredient.draw(context, program_state, chicken3_trans, this.materials.chicken);
+            this.shapes.ingredient.draw(context, program_state, chicken4_trans, this.materials.chicken); 
+
+        }
+        if (this.chickens.length >= 5) {
+            this.shapes.ingredient.draw(context, program_state, chicken1_trans, this.materials.chicken);
+            this.shapes.ingredient.draw(context, program_state, chicken2_trans, this.materials.chicken); 
+            this.shapes.ingredient.draw(context, program_state, chicken3_trans, this.materials.chicken); 
+            this.shapes.ingredient.draw(context, program_state, chicken4_trans, this.materials.chicken); 
+            this.shapes.ingredient.draw(context, program_state, chicken5_trans, this.materials.chicken); 
+        }
+
+        // celery
+        var celery1_trans = model_transform;
+        const ce1 = this.coordinates[3]
+        celery1_trans = celery1_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
+                                    .times(Mat4.translation(ce1[0], ce1[1], ce1[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+
+        var celery2_trans = model_transform;
+        const ce2 = this.coordinates[9];
+        celery2_trans = celery2_trans.times(Mat4.rotation(-angle/6, 0, 1, 0))
+                                    .times(Mat4.translation(ce2[0], ce2[1], ce2[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+
+        var celery3_trans = model_transform;
+        const ce3 = this.coordinates[7];
+        celery3_trans = celery3_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
+                                    .times(Mat4.translation(ce3[0], ce3[1], ce3[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+        
+        var celery4_trans = model_transform;
+        const ce4 = this.coordinates[22]
+        celery4_trans = celery4_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
+                                    .times(Mat4.translation(ce4[0], ce4[1], ce4[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+
+        var celery5_trans = model_transform;
+        const ce5 = this.coordinates[18]
+        celery5_trans = celery5_trans.times(Mat4.rotation(-angle/6, 0, 1, 0))
+                                    .times(Mat4.translation(ce5[0], ce5[1], ce5[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+                            
+
+        if (this.celerys.length === 1) {
+            this.shapes.ingredient.draw(context, program_state, celery1_trans, this.materials.celery); 
+        }  
+        if (this.celerys.length === 2) {
+            this.shapes.ingredient.draw(context, program_state, celery1_trans, this.materials.celery);
+            this.shapes.ingredient.draw(context, program_state, celery2_trans, this.materials.celery); 
+        }
+        if (this.celerys.length === 3) {
+            this.shapes.ingredient.draw(context, program_state, celery1_trans, this.materials.celery);
+            this.shapes.ingredient.draw(context, program_state, celery2_trans, this.materials.celery); 
+            this.shapes.ingredient.draw(context, program_state, celery3_trans, this.materials.celery); 
+
+        }
+        if (this.celerys.length === 4) {
+            this.shapes.ingredient.draw(context, program_state, celery1_trans, this.materials.celery);
+            this.shapes.ingredient.draw(context, program_state, celery2_trans, this.materials.celery); 
+            this.shapes.ingredient.draw(context, program_state, celery3_trans, this.materials.celery);
+            this.shapes.ingredient.draw(context, program_state, celery4_trans, this.materials.celery); 
+
+        }
+        if (this.celerys.length >= 5) {
+            this.shapes.ingredient.draw(context, program_state, celery1_trans, this.materials.celery);
+            this.shapes.ingredient.draw(context, program_state, celery2_trans, this.materials.celery); 
+            this.shapes.ingredient.draw(context, program_state, celery3_trans, this.materials.celery);
+            this.shapes.ingredient.draw(context, program_state, celery4_trans, this.materials.celery);
+            this.shapes.ingredient.draw(context, program_state, celery5_trans, this.materials.celery); 
+ 
+        }
+        
+        //mushroom
+        var mush1_trans = model_transform;
+        const m1 = this.coordinates[24]
+        mush1_trans = mush1_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
+                                    .times(Mat4.translation(m1[0], m1[1], m1[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+
+
+        var mush2_trans = model_transform;
+        const m2 = this.coordinates[11]
+        mush2_trans = mush2_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
+                                    .times(Mat4.translation(m2[0], m2[1], m2[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+
+        var mush3_trans = model_transform;
+        const m3 = this.coordinates[15]
+        mush3_trans = mush3_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
+                                    .times(Mat4.translation(m3[0], m3[1], m3[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+
+        var mush4_trans = model_transform;
+        const m4 = this.coordinates[12]
+        mush4_trans = mush4_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
+                                    .times(Mat4.translation(m4[0], m4[1], m4[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+
+        var mush5_trans = model_transform;
+        const m5 = this.coordinates[14]
+        mush5_trans = mush5_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
+                                    .times(Mat4.translation(m5[0], m5[1], m5[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+
+        if (this.mushrooms.length === 1) {
+            this.shapes.ingredient.draw(context, program_state, mush1_trans, this.materials.mushroom); 
+        }  
+        if (this.mushrooms.length === 2) {
+            this.shapes.ingredient.draw(context, program_state, mush1_trans, this.materials.mushroom); 
+            this.shapes.ingredient.draw(context, program_state, mush2_trans, this.materials.mushroom); 
+        }  
+        if (this.mushrooms.length === 3) {
+            this.shapes.ingredient.draw(context, program_state, mush1_trans, this.materials.mushroom); 
+            this.shapes.ingredient.draw(context, program_state, mush2_trans, this.materials.mushroom); 
+            this.shapes.ingredient.draw(context, program_state, mush3_trans, this.materials.mushroom); 
+
+        } 
+        if (this.mushrooms.length === 4) {
+            this.shapes.ingredient.draw(context, program_state, mush1_trans, this.materials.mushroom); 
+            this.shapes.ingredient.draw(context, program_state, mush2_trans, this.materials.mushroom); 
+            this.shapes.ingredient.draw(context, program_state, mush3_trans, this.materials.mushroom); 
+            this.shapes.ingredient.draw(context, program_state, mush4_trans, this.materials.mushroom); 
+        } 
+        if (this.mushrooms.length >= 5) {
+            this.shapes.ingredient.draw(context, program_state, mush1_trans, this.materials.mushroom); 
+            this.shapes.ingredient.draw(context, program_state, mush2_trans, this.materials.mushroom); 
+            this.shapes.ingredient.draw(context, program_state, mush3_trans, this.materials.mushroom); 
+            this.shapes.ingredient.draw(context, program_state, mush4_trans, this.materials.mushroom); 
+            this.shapes.ingredient.draw(context, program_state, mush5_trans, this.materials.mushroom); 
+
+        } 
+        // pasta
+        var pasta1_trans = model_transform;
+        const p1 = this.coordinates[16]
+        pasta1_trans = pasta1_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
+                                    .times(Mat4.translation(p1[0], p1[1], p1[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+        var pasta2_trans = model_transform;
+        const p2 = this.coordinates[19]
+        pasta2_trans = pasta2_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
+                                    .times(Mat4.translation(p2[0], p2[1], p2[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+
+        var pasta3_trans = model_transform;
+        const p3 = this.coordinates[17]
+        pasta3_trans = pasta3_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
+                                    .times(Mat4.translation(p3[0], p3[1], p3[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+
+        var pasta4_trans = model_transform;
+        const p4 = this.coordinates[23]
+        pasta4_trans = pasta4_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
+                                    .times(Mat4.translation(p4[0], p4[1], p4[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+
+        var pasta5_trans = model_transform;
+        const p5 = this.coordinates[21]
+        pasta5_trans = pasta5_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
+                                    .times(Mat4.translation(p5[0], p5[1], p5[2]))
+                                    .times(Mat4.scale(0.5, 0.5, 0.5));
+                            
+         
+        if (this.pastas.length === 1) {
+            this.shapes.ingredient.draw(context, program_state, pasta1_trans, this.materials.pasta); 
+        }  
+        if (this.pastas.length === 2) {
+            this.shapes.ingredient.draw(context, program_state, pasta1_trans, this.materials.pasta); 
+            this.shapes.ingredient.draw(context, program_state, pasta2_trans, this.materials.pasta); 
+        }  
+        if (this.pastas.length === 3) {
+            this.shapes.ingredient.draw(context, program_state, pasta1_trans, this.materials.pasta); 
+            this.shapes.ingredient.draw(context, program_state, pasta2_trans, this.materials.pasta); 
+            this.shapes.ingredient.draw(context, program_state, pasta3_trans, this.materials.pasta); 
+
+        } 
+        if (this.pastas.length === 4) {
+            this.shapes.ingredient.draw(context, program_state, pasta1_trans, this.materials.pasta); 
+            this.shapes.ingredient.draw(context, program_state, pasta2_trans, this.materials.pasta); 
+            this.shapes.ingredient.draw(context, program_state, pasta3_trans, this.materials.pasta); 
+            this.shapes.ingredient.draw(context, program_state, pasta4_trans, this.materials.pasta); 
+        } 
+        if (this.pastas.length >= 5) {
+            this.shapes.ingredient.draw(context, program_state, pasta1_trans, this.materials.pasta); 
+            this.shapes.ingredient.draw(context, program_state, pasta2_trans, this.materials.pasta); 
+            this.shapes.ingredient.draw(context, program_state, pasta3_trans, this.materials.pasta); 
+            this.shapes.ingredient.draw(context, program_state, pasta4_trans, this.materials.pasta); 
+            this.shapes.ingredient.draw(context, program_state, pasta5_trans, this.materials.pasta); 
+
+        }                    
+                            
+      
     }
 }
 

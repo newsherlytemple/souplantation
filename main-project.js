@@ -1,4 +1,5 @@
 import {defs, tiny} from './examples/common.js';
+import {Body, Simulation} from './examples/collisions-demo.js';
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
@@ -78,6 +79,8 @@ export class Main_Project extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
+        Object.assign(this, {time_accumulator: 0, time_scale: 1, t: 0, dt: 1 / 20, bodies: [], steps_taken: 0});
+
 
         this.ingredients = new Ingredients(initial_ingredients);
 
@@ -104,8 +107,26 @@ export class Main_Project extends Scene {
 
             // shapes for soup ingredients
             broth: new defs.Rounded_Capped_Cylinder(100, 100),
-            ingredient: new defs.Cube(0.5, 0.5)
+            ingredient: new defs.Cube(0.5, 0.5),
+
+            // shapes for bubbles
+            bubble: new defs.Subdivision_Sphere(4),
         };
+
+        this.colliders = [
+            {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(1), leeway: 1},
+            {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(2), leeway: 1},
+            {intersect_test: Body.intersect_cube, points: new defs.Cube(), leeway: 1}
+        ];
+
+        this.collider_selection = 0;
+
+        this.inactive_color = new Material(bump, {
+            color: color(.5, .5, .5, 1), ambient: .2,
+            texture: this.data.textures.rgb
+        });
+        this.active_color = this.inactive_color.override({color: color(.5, 0, 0, 1), ambient: .5});
+        this.bright = new Material(phong, {color: color(0, 1, 0, .5), ambient: 1});
 
         // *** Materials
         this.materials = {
@@ -234,7 +255,77 @@ export class Main_Project extends Scene {
         this.new_line();
     }
 
-    
+    increase() {
+        this.collider_selection = Math.min(this.collider_selection + 1, this.colliders.length - 1);
+    }
+
+    decrease() {
+        this.collider_selection = Math.max(this.collider_selection - 1, 0)
+    }
+
+    simulate(frame_time) {
+        // simulate(): Carefully advance time according to Glenn Fiedler's
+        // "Fix Your Timestep" blog post.
+        // This line gives ourselves a way to trick the simulator into thinking
+        // that the display framerate is running fast or slow:
+        frame_time = this.time_scale * frame_time;
+
+        // Avoid the spiral of death; limit the amount of time we will spend
+        // computing during this timestep if display lags:
+        this.time_accumulator += Math.min(frame_time, 0.1);
+        // Repeatedly step the simulation until we're caught up with this frame:
+        while (Math.abs(this.time_accumulator) >= this.dt) {
+            // Single step of the simulation for all bodies:
+            this.update_state(this.dt);
+            for (let b of this.bodies)
+                b.advance(this.dt);
+            // Following the advice of the article, de-couple
+            // our simulation time from our frame rate:
+            this.t += Math.sign(frame_time) * this.dt;
+            this.time_accumulator -= Math.sign(frame_time) * this.dt;
+            this.steps_taken++;
+        }
+        // Store an interpolation factor for how close our frame fell in between
+        // the two latest simulation time steps, so we can correctly blend the
+        // two latest states and display the result.
+        let alpha = this.time_accumulator / this.dt;
+        for (let b of this.bodies) b.blend_state(alpha);
+    }
+
+    update_state(dt, num_bodies) {
+        while (this.bodies.length < num_bodies){
+            for (const ingredient of ingredients){
+                this.bodies.push(new Body(ingredient));
+            }
+        }
+        const collider = this.colliders[this.collider_selection];
+            // Loop through all bodies (call each "a"):
+            for (let a of this.bodies) {
+                // Cache the inverse of matrix of body "a" to save time.
+                a.inverse = Mat4.inverse(a.drawn_location);
+
+                a.linear_velocity = a.linear_velocity.minus(a.center.times(dt));
+                // Apply a small centripetal force to everything.
+                a.material = this.inactive_color;
+                // Default color: white
+
+                if (a.linear_velocity.norm() == 0)
+                    continue;
+                // *** Collision process is here ***
+                // Loop through all bodies again (call each "b"):
+                for (let b of this.bodies) {
+                    // Pass the two bodies and the collision shape to check_if_colliding():
+                    if (!a.check_if_colliding(b, collider))
+                        continue;
+                    // If we get here, we collided, so turn red and zero out the
+                    // velocity so they don't inter-penetrate any further.
+                    a.material = this.active_color;
+                    a.linear_velocity = vec3(0, 0, 0);
+                    a.angular_velocity = 0;
+                }
+            }
+    }
+
     // draw the pot
     draw_pot(context, program_state, model_transform){
         let pot_trans = model_transform;
@@ -272,6 +363,17 @@ export class Main_Project extends Scene {
         this.shapes.pothandle.draw(context, program_state, h2_trans, this.materials.pot);
     }
 
+    // draw_bubbles(context, program_state, model_transform) {
+    //     let bub_trans = model_transform;
+    //     const pos = random_position();
+    //     let x = pos[0];
+    //     let y = pos[1];
+    //     let z = pos[2];
+    //     bub_trans = bub_trans.times(Mat4.translation(x, y, z));
+
+    //     this.shapes.bubble.draw(context, program_state, bub_trans, this.materials.broth);
+    // }
+
     // draw the stove top
     draw_stovetop(context, program_state, model_transform) {
         // stovetop
@@ -305,8 +407,6 @@ export class Main_Project extends Scene {
         this.shapes.stovetop.draw(context, program_state, b4_trans, this.materials.burnertop)
         b4_trans = b4_trans.times(Mat4.translation(0, 0, -1));
         this.shapes.burner.draw(context, program_state, b4_trans, this.materials.burner);
-                        
-
     }
 
     // draw the background
@@ -374,7 +474,7 @@ export class Main_Project extends Scene {
                 break;
         }
     
-        this.shapes.ingredient.draw(context, program_state, ingredient_transform, material)
+        this.shapes.ingredient.draw(context, program_state, ingredient_transform, material);
     }
     
     display(context, program_state) {
@@ -401,10 +501,18 @@ export class Main_Project extends Scene {
 
 
         this.draw_broth(context, program_state, model_transform);
+       // this.draw_bubbles(context, program_state, model_transform);
 
+        if (program_state.animate)
+            this.simulate(program_state.animation_delta_time);
         const ingredients = this.ingredients.get_Ingredients();
         for (const ingredient of ingredients) {
             this.draw_ingredient(context, program_state, model_transform, ingredient);
+            
+            // const {points, leeway} = this.colliders[this.collider_selection];
+            // const size = vec3(1 + leeway, 1 + leeway, 1 + leeway);
+            // for (let b of this.bodies)
+            //     points.draw(context, program_state, b.drawn_location.times(Mat4.scale(...size)), this.bright, "LINE_STRIP");
         }
 
     }

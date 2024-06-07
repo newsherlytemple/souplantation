@@ -101,6 +101,19 @@ export class Main_Project extends Scene {
             counter2: new defs.Square(),
             backsplash1: new defs.Square(),
             backsplash2: new defs.Square(),
+            tile1: new defs.Cube(1.,1.),
+            tile2: new defs.Cube(1.,1.),
+            tile3: new defs.Cube(1.,1.),
+            tile4: new defs.Cube(1.,1.),
+            tile5: new defs.Cube(1.,1.),
+            tile6: new defs.Cube(1.,1.),
+            tile7: new defs.Cube(1.,1.),
+            tile8: new defs.Cube(1.,1.),
+            tile9: new defs.Cube(1.,1.),
+
+            // shapes for spoon
+            spoon_base: new defs.Capped_Cylinder(100, 100),
+            spoon_top: new defs.Grid_Sphere(100, 100),
 
             // shapes for soup ingredients
             broth: new defs.Rounded_Capped_Cylinder(100, 100),
@@ -122,10 +135,14 @@ export class Main_Project extends Scene {
                 {ambient: 0.4, diffusivity: 0.6, color: hex_color("#d00000")}),
           
             // materials for counter + stovetop
-            granite: new Material(new defs.Textured_Phong(),
-                {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/granite.jpg")}),
+            pink_tile: new Material(new Gouraud_Shader(),
+                {ambient: 0.4, diffusivity: 0.6, color: hex_color("#ffafcc")}),
+            blue_tile: new Material(new Gouraud_Shader(),
+                {ambient: 0.4, diffusivity: 0.6, color: hex_color("#a2d2ff")}),
+            grout: new Material(new Gouraud_Shader(),
+                {ambient: 0.4, diffusivity: 0.6, color: hex_color("#cdb4db")}),
             
-            // materials for soup
+                // materials for soup
             broth: new Material(new defs.Textured_Phong(),
                 {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/broth.png")}),
             // broth: new Material(new defs.Phong_Shader(),
@@ -316,24 +333,88 @@ export class Main_Project extends Scene {
         counter1_transform = counter1_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
                                         .times(Mat4.scale(15,15,1))
                                         .times(Mat4.translation(1.5,-.5,4.75));
-        this.shapes.counter1.draw(context, program_state, counter1_transform, this.materials.granite);
+        this.shapes.counter1.draw(context, program_state, counter1_transform, this.materials.grout);
         let counter2_transform = model_transform;
         counter2_transform = counter2_transform.times(Mat4.rotation(Math.PI/2,1,0,0))
                                         .times(Mat4.scale(15,15,1))
                                         .times(Mat4.translation(-2,-.5,4.75));
-        this.shapes.counter2.draw(context, program_state, counter2_transform, this.materials.granite);
+        this.shapes.counter2.draw(context, program_state, counter2_transform, this.materials.grout);
 
         // backsplash
         let backsplash1_transform = model_transform;
         backsplash1_transform = backsplash1_transform.times(Mat4.rotation(Math.PI/2,0,0,1))
                                         .times(Mat4.scale(15,15,1))
                                         .times(Mat4.translation(0,-1,-19.5));
-        this.shapes.backsplash1.draw(context, program_state, backsplash1_transform, this.materials.granite);
+        this.shapes.backsplash1.draw(context, program_state, backsplash1_transform, this.materials.grout);
         let backsplash2_transform = model_transform;
         backsplash2_transform = backsplash2_transform.times(Mat4.rotation(Math.PI/2,0,0,1))
                                         .times(Mat4.scale(15,15,1))
                                         .times(Mat4.translation(0,1,-19.5));
-        this.shapes.backsplash2.draw(context, program_state, backsplash2_transform, this.materials.granite);
+        this.shapes.backsplash2.draw(context, program_state, backsplash2_transform, this.materials.grout);
+        
+        // tile
+        let tile1_transform = model_transform;
+        tile1_transform = tile1_transform.times(Mat4.rotation(Math.PI/2, 1, 0, 0))
+                                        .times(Mat4.scale(6.5, 6.5, 6.5))
+                                        .times(Mat4.translation(2.45, 0.1, 1.7));
+        this.shapes.tile1.draw(context, program_state, tile1_transform, this.materials.pink_tile);
+        let tile2_transform = model_transform;
+        tile2_transform = tile2_transform.times(Mat4.rotation(Math.PI/2, 1, 0, 0))
+                                        .times(Mat4.scale(6.5, 6.5, 6.5))
+                                        .times(Mat4.translation(2.45, -2, 1.7));
+        this.shapes.tile2.draw(context, program_state, tile2_transform, this.materials.blue_tile);
+        let tile3_transform = model_transform;
+        tile3_transform = tile3_transform.times(Mat4.rotation(Math.PI/2, 1, 0, 0))
+                                        .times(Mat4.scale(6.5, 6.5, 6.5))
+                                        .times(Mat4.translation(4.55, -2, 1.7));
+        this.shapes.tile3.draw(context, program_state, tile3_transform, this.materials.pink_tile);
+        let tile4_transform = model_transform;
+        tile4_transform = tile4_transform.times(Mat4.rotation(Math.PI/2, 1, 0, 0))
+                                        .times(Mat4.scale(6.5, 6.5, 6.5))
+                                        .times(Mat4.translation(-3.45, -2, 1.7));
+        this.shapes.tile4.draw(context, program_state, tile4_transform, this.materials.pink_tile);
+        let tile5_transform = model_transform;
+        tile5_transform = tile5_transform.times(Mat4.rotation(Math.PI/2, 1, 0, 0))
+                                        .times(Mat4.scale(6.5, 6.5, 6.5))
+                                        .times(Mat4.translation(1.45, -3.95, -0.395));
+        this.shapes.tile5.draw(context, program_state, tile5_transform, this.materials.pink_tile);
+        let tile6_transform = model_transform;
+        tile6_transform = tile6_transform.times(Mat4.rotation(Math.PI/2, 1, 0, 0))
+                                        .times(Mat4.scale(6.5, 6.5, 6.5))
+                                        .times(Mat4.translation(-.6, -3.95, -0.395));
+        this.shapes.tile6.draw(context, program_state, tile6_transform, this.materials.blue_tile);
+        let tile7_transform = model_transform;
+        tile7_transform = tile7_transform.times(Mat4.rotation(Math.PI/2, 1, 0, 0))
+                                        .times(Mat4.scale(6.5, 6.5, 6.5))
+                                        .times(Mat4.translation(-2.65, -3.95, -0.395));
+        this.shapes.tile7.draw(context, program_state, tile7_transform, this.materials.pink_tile);
+        let tile8_transform = model_transform;
+        tile8_transform = tile8_transform.times(Mat4.rotation(Math.PI/2, 1, 0, 0))
+                                        .times(Mat4.scale(6.5, 6.5, 6.5))
+                                        .times(Mat4.translation(-4.7, -3.95, -0.395));
+        this.shapes.tile8.draw(context, program_state, tile8_transform, this.materials.blue_tile);
+        let tile9_transform = model_transform;
+        tile9_transform = tile9_transform.times(Mat4.rotation(Math.PI/2, 1, 0, 0))
+                                        .times(Mat4.scale(6.5, 6.5, 6.5))
+                                        .times(Mat4.translation(3.5, -3.95, -0.395));
+        this.shapes.tile9.draw(context, program_state, tile9_transform, this.materials.blue_tile);
+    }
+
+    // draw the spoon
+    draw_spoon(context, program_state, model_transform) {
+        // spoon base
+        let spoon_base_transform = model_transform;
+        spoon_base_transform = spoon_base_transform.times(Mat4.rotation(Math.PI, 1, 0, 0))
+                                        .times(Mat4.scale(0.35, 0.35, 7))
+                                        .times(Mat4.translation(33, 12, -0.2));
+        this.shapes.spoon_base.draw(context, program_state, spoon_base_transform, this.materials.grout);
+
+        // spoon top
+        let spoon_top_transform = model_transform;
+        spoon_top_transform = spoon_top_transform.times(Mat4.rotation(Math.PI, 1, 0, 0))
+                                        .times(Mat4.scale(1.2, 0.5, 1.9))
+                                        .times(Mat4.translation(9.55, 8.2, 1.85));
+        this.shapes.spoon_top.draw(context, program_state, spoon_top_transform, this.materials.grout);
     }
 
     draw_broth(context, program_state, model_transform) {
@@ -398,6 +479,7 @@ export class Main_Project extends Scene {
         this.draw_stovetop(context, program_state, model_transform);
 
         this.draw_background(context, program_state, model_transform);
+        this.draw_spoon(context, program_state, model_transform);
 
 
         this.draw_broth(context, program_state, model_transform);

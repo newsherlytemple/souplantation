@@ -1,4 +1,5 @@
 import {defs, tiny} from './examples/common.js';
+import {Body} from './examples/collisions-demo.js';
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
@@ -49,6 +50,7 @@ function random_position() {
           }
 
         } while (tooClose || (x * x + z * z > 9));
+
     taken_pos.add(pos);
     return vec3(x, y, z);
 }
@@ -101,8 +103,14 @@ export class Main_Project extends Scene {
     constructor() {
         super();
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
+
+
+        // for collision detection
+        Object.assign(this, {time_accumulator: 0, time_scale: 1, t: 0, dt: 1 / 20, bodies: [], steps_taken: 0});
+
         this.coordinates = generate_positions();
         this.indicies = random_indicies();
+      
         this.carrot = false;
         this.chicken = false;
         this.celery = false;
@@ -150,13 +158,31 @@ export class Main_Project extends Scene {
 
             // shapes for soup ingredients
             broth: new defs.Rounded_Capped_Cylinder(100, 100),
-            ingredient: new defs.Cube(0.5, 0.5)
+            ingredient: new defs.Cube(0.5, 0.5),
+
+            // shapes for bubbles
+            bubble: new defs.Subdivision_Sphere(4),
         };
+
+        this.colliders = [
+            {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(1), leeway: 1},
+            {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(2), leeway: 1},
+            {intersect_test: Body.intersect_cube, points: new defs.Cube(), leeway: 1}
+        ];
+
+        this.collider_selection = 0;
+
+        // this.inactive_color = new Material(bump, {
+        //     color: color(.5, .5, .5, 1), ambient: .2,
+        //     texture: this.data.textures.rgb
+        // });
+        // this.active_color = this.inactive_color.override({color: color(.5, 0, 0, 1), ambient: .5});
+        // this.bright = new Material(phong, {color: color(0, 1, 0, .5), ambient: 1});
 
         // *** Materials
         this.materials = {
             test: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#89CFF0")}),
+                {ambient: .4, diffusivity: .6, color: hex_color("#DC143C")}),
             // materials for pot + stovetop
             pot: new Material(new defs.Phong_Shader(),
                 {ambient: 0.4, diffusivity: 0.6, color: hex_color("#808080"), specularity: 1}),
@@ -253,7 +279,6 @@ export class Main_Project extends Scene {
             if (this.pastas.length > 4) {
                 this.pastas.length = 4;
             }
-
         });
         this.new_line();
 
@@ -266,6 +291,7 @@ export class Main_Project extends Scene {
             this.chickens.pop();
         });
         // this.new_line();
+
 
         this.key_triggered_button("Remove Celery", ["8"], () => {
             this.celerys.pop();
@@ -283,7 +309,66 @@ export class Main_Project extends Scene {
         // this.new_line();
     }
 
-    
+    // this is ripped from collisions-demo.js
+    simulate(frame_time) {
+        // simulate(): Carefully advance time according to Glenn Fiedler's
+        // "Fix Your Timestep" blog post.
+        // This line gives ourselves a way to trick the simulator into thinking
+        // that the display framerate is running fast or slow:
+        frame_time = this.time_scale * frame_time;
+
+        // Avoid the spiral of death; limit the amount of time we will spend
+        // computing during this timestep if display lags:
+        this.time_accumulator += Math.min(frame_time, 0.1);
+        // Repeatedly step the simulation until we're caught up with this frame:
+        while (Math.abs(this.time_accumulator) >= this.dt) {
+            // Single step of the simulation for all bodies:
+            this.update_state(this.dt);
+            for (let b of this.bodies)
+                b.advance(this.dt);
+            // Following the advice of the article, de-couple
+            // our simulation time from our frame rate:
+            this.t += Math.sign(frame_time) * this.dt;
+            this.time_accumulator -= Math.sign(frame_time) * this.dt;
+            this.steps_taken++;
+        }
+        // Store an interpolation factor for how close our frame fell in between
+        // the two latest simulation time steps, so we can correctly blend the
+        // two latest states and display the result.
+        let alpha = this.time_accumulator / this.dt;
+        for (let b of this.bodies) b.blend_state(alpha);
+    }
+
+    update_state(dt, num_bodies) {
+        while (this.bodies.length < num_bodies){
+            for (const ingredient of ingredients){
+                this.bodies.push(new Body(ingredient));
+            }
+        }
+        const collider = this.colliders[this.collider_selection];
+            // Loop through all bodies (call each "a"):
+            for (let a of this.bodies) {
+                // Cache the inverse of matrix of body "a" to save time.
+                a.inverse = Mat4.inverse(a.drawn_location);
+
+                if (a.linear_velocity.norm() == 0)
+                    continue;
+                // *** Collision process is here ***
+                // Loop through all bodies again (call each "b"):
+                for (let b of this.bodies) {
+                    // Pass the two bodies and the collision shape to check_if_colliding():
+                    if (!a.check_if_colliding(b, collider))
+                        continue;
+                    // If we get here, we collided, so turn red and zero out the
+                    // velocity so they don't inter-penetrate any further.
+                    else{
+                        a_trans = Mat4.identity().times(Mat4.translation(5,5,5));
+                        
+                    }
+                }
+            }
+    }
+
     // draw the pot
     draw_pot(context, program_state, model_transform){
         let pot_trans = model_transform;
@@ -354,8 +439,6 @@ export class Main_Project extends Scene {
         this.shapes.stovetop.draw(context, program_state, b4_trans, this.materials.burnertop)
         b4_trans = b4_trans.times(Mat4.translation(0, 0, -1));
         this.shapes.burner.draw(context, program_state, b4_trans, this.materials.burner);
-                        
-
     }
 
     // draw the background
@@ -484,8 +567,6 @@ export class Main_Project extends Scene {
         broth_transform = broth_transform.times(Mat4.rotation(t, 0,1,0));
         this.draw_broth(context, program_state, broth_transform);
 
-
-
         const period = 10;
         const quarter = period / 4;
 
@@ -533,15 +614,21 @@ export class Main_Project extends Scene {
             angle = Math.PI / 2 * ((half_quarter - (curr_quarter - half_quarter)) / half_quarter)
         }
 
+
+        // for collision detection                                
+        //this.simulate(program_state.animation_delta_time);
+
         //carrots 
         var carrot1_trans = model_transform;
         const c1 = this.coordinates[this.indicies[0]];
+
         carrot1_trans = carrot1_trans.times(Mat4.rotation(angle/4, 0, 1, 0))
                                      .times(Mat4.translation(c1[0], c1[1], c1[2]))
                                      .times(Mat4.scale(0.5, 0.5, 0.5));
 
         var carrot2_trans = model_transform;
         const c2 = this.coordinates[this.indicies[1]];
+
         carrot2_trans = carrot2_trans.times(Mat4.rotation(angle/4, 0, 1, 0))
                                     .times(Mat4.translation(c2[0], c2[1], c2[2]))
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
@@ -569,6 +656,7 @@ export class Main_Project extends Scene {
             this.shapes.ingredient.draw(context, program_state, carrot2_trans, this.materials.carrot); 
             this.shapes.ingredient.draw(context, program_state, carrot3_trans, this.materials.carrot); 
         }
+
         if (this.carrots.length >= 4) {
             this.shapes.ingredient.draw(context, program_state, carrot1_trans, this.materials.carrot);
             this.shapes.ingredient.draw(context, program_state, carrot2_trans, this.materials.carrot); 
@@ -661,6 +749,7 @@ export class Main_Project extends Scene {
             this.shapes.ingredient.draw(context, program_state, celery3_trans, this.materials.celery); 
 
         }
+
         if (this.celerys.length >= 4) {
             this.shapes.ingredient.draw(context, program_state, celery1_trans, this.materials.celery);
             this.shapes.ingredient.draw(context, program_state, celery2_trans, this.materials.celery); 
@@ -668,7 +757,6 @@ export class Main_Project extends Scene {
             this.shapes.ingredient.draw(context, program_state, celery4_trans, this.materials.celery); 
 
         }
-           
         //mushroom
         var mush1_trans = model_transform;
         const m1 = this.coordinates[this.indicies[12]]
@@ -694,7 +782,7 @@ export class Main_Project extends Scene {
         mush4_trans = mush4_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
                                     .times(Mat4.translation(m4[0], m4[1], m4[2]))
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
-
+      
         if (this.mushrooms.length === 1) {
             this.shapes.ingredient.draw(context, program_state, mush1_trans, this.materials.mushroom); 
         }  
@@ -713,8 +801,7 @@ export class Main_Project extends Scene {
             this.shapes.ingredient.draw(context, program_state, mush2_trans, this.materials.mushroom); 
             this.shapes.ingredient.draw(context, program_state, mush3_trans, this.materials.mushroom); 
             this.shapes.ingredient.draw(context, program_state, mush4_trans, this.materials.mushroom); 
-        } 
-       
+
         // pasta
         var pasta1_trans = model_transform;
         const p1 = this.coordinates[this.indicies[16]]
@@ -738,7 +825,6 @@ export class Main_Project extends Scene {
         pasta4_trans = pasta4_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
                                     .times(Mat4.translation(p4[0], p4[1], p4[2]))
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
-
          
         if (this.pastas.length === 1) {
             this.shapes.ingredient.draw(context, program_state, pasta1_trans, this.materials.pasta); 
@@ -758,7 +844,6 @@ export class Main_Project extends Scene {
             this.shapes.ingredient.draw(context, program_state, pasta2_trans, this.materials.pasta); 
             this.shapes.ingredient.draw(context, program_state, pasta3_trans, this.materials.pasta); 
             this.shapes.ingredient.draw(context, program_state, pasta4_trans, this.materials.pasta); 
-        }                   
     }
 }
 

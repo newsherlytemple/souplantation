@@ -261,9 +261,9 @@ export class Collision_Demo extends Simulation {
         this.shapes = Object.assign({}, this.data.shapes);
         // Make simpler dummy shapes for representing all other shapes during collisions:
         this.colliders = [
-            {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(1), leeway: .5},
-            {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(2), leeway: .3},
-            {intersect_test: Body.intersect_cube, points: new defs.Cube(), leeway: .1}
+            {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(1), leeway: 1},
+            {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(2), leeway: 1},
+            {intersect_test: Body.intersect_cube, points: new defs.Cube(), leeway: 1}
         ];
         this.collider_selection = 0;
         // Materials:

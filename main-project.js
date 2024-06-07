@@ -20,23 +20,51 @@ class smallTorus extends Shape {
 }
 
 const taken_pos = new Set();
+const boxSize = 0.5;
+const safeDistance = boxSize + 0.1;
 
-function pos_to_string(x, y, z) {
-    return `${x},${y},${z}`;
+function distanceSquared(x1, z1, x2, z2) {
+    return (x1 - x2) ** 2 + (z1 - z2) ** 2;
+  }
+
+function pos_to_string(x, z) {
+    return `${x},${z}`;
 }
 
 function random_position() {
-    let x, y, z, pos;
+    let x, y, z, pos, tooClose;
     do {
-        x = Math.floor(Math.random() * 6 - 3);
-        y = Math.floor(Math.random() * (1.75 - 1.2)) + 1.2;
-        z = Math.floor(Math.random() * 6 - 3);
+        x = Math.random() * 9 - 3;
+        y = Math.random() * (1.5 - 0.5) + 0.5;
+        z = Math.random() * 9 - 3;
 
-        pos = pos_to_string(x, y, z);
-    } while ((x * x + z * z > 9) || taken_pos.has(pos));
+        pos = pos_to_string(x, z);
+        tooClose = false;
+
+        for (let curr_pos of taken_pos) {
+            const [tx, tz] = curr_pos.split(',').map(Number);
+            if (distanceSquared(x, z, tx, tz) < safeDistance ** 2) {
+              tooClose = true;
+              break;
+            }
+          }
+
+        } while (tooClose || (x * x + z * z > 9));
+
     taken_pos.add(pos);
     return vec3(x, y, z);
 }
+
+function random_indicies() {
+    const numbers = Array.from({ length: 20 }, (_, i) => i);
+  
+    for (let i = numbers.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [numbers[i], numbers[j]] = [numbers[j], numbers[i]]; 
+    }
+  
+    return numbers;
+  }
 
 // const taken_offset = new Set();
 
@@ -55,10 +83,11 @@ function random_position() {
 
 function generate_positions() {
     let coordinates = [];
-    for (var i = 0; i <= 26; i++) {
+    for (var i = 0; i <= 19; i++) {
         let position = random_position();
         coordinates[i] = position;
     }
+    console.log(coordinates)
     return coordinates;
 }
 
@@ -75,10 +104,13 @@ export class Main_Project extends Scene {
         super();
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
 
+
         // for collision detection
         Object.assign(this, {time_accumulator: 0, time_scale: 1, t: 0, dt: 1 / 20, bodies: [], steps_taken: 0});
 
         this.coordinates = generate_positions();
+        this.indicies = random_indicies();
+      
         this.carrot = false;
         this.chicken = false;
         this.celery = false;
@@ -175,8 +207,6 @@ export class Main_Project extends Scene {
 
             carrot: new Material(new defs.Textured_Phong(),
                 {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/carrot.png")}),
-            // carrot: new Material(new Gouraud_Shader(),
-            // {ambient: 1, diffusivity: .6, specularity: .01, texture: new Texture("assets/carrot.png")}),
 
             beef: new Material(new defs.Textured_Phong(),
                 {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/beef.png")}),
@@ -203,81 +233,80 @@ export class Main_Project extends Scene {
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        this.key_triggered_button("Add Carrots", ["Control", "0"], () => {
+        this.key_triggered_button("Add Carrots", ["1"], () => {
             const carrot = new Ingredient('carrot');
             this.carrots.push(carrot);
             this.carrot = true;
-            if (this.carrots.length > 5) {
-                this.carrots.length = 5;
+            if (this.carrots.length > 4) {
+                this.carrots.length = 4;
             }
         });
-        this.new_line();
-
-        this.key_triggered_button("Add Chicken", ["Control", "1"], () => {
+        
+        this.key_triggered_button("Add Chicken", ["2"], () => {
             const chicken = new Ingredient('chicken');
             this.chickens.push(chicken);
             this.chicken = true;
-            if (this.chickens.length > 5) {
-                this.chickens.length = 5;
+            if (this.chickens.length > 4) {
+                this.chickens.length = 4;
             }
         });
-        this.new_line();
+        // this.new_line();
 
-        this.key_triggered_button("Add Celery", ["Control", "2"], () => {
+        this.key_triggered_button("Add Celery", ["3"], () => {
             const celery = new Ingredient('celery');
             this.celerys.push(celery);
             this.celery = true;
-            if (this.celerys.length > 5) {
-                this.celerys.length = 5;
+            if (this.celerys.length > 4) {
+                this.celerys.length = 4;
             }
         });
-        this.new_line();
+        // this.new_line();
 
-        this.key_triggered_button("Add Mushroom", ["Control", "3"], () => {
+        this.key_triggered_button("Add Mushroom", ["4"], () => {
             const mushroom = new Ingredient('mushroom');
             this.mushrooms.push(mushroom);
             this.mushroom = true;
-            if (this.mushrooms.length > 5) {
-                this.mushrooms.length = 5;
+            if (this.mushrooms.length > 4) {
+                this.mushrooms.length = 4;
             }
         });
-        this.new_line();
+        // this.new_line();
 
-        this.key_triggered_button("Add Pasta", ["Control", "4"], () => {
+        this.key_triggered_button("Add Pasta", ["5"], () => {
             const pasta = new Ingredient('pasta');
             this.pastas.push(pasta);
             this.pasta = true;
-            if (this.pastas.length > 5) {
-                this.pastas.length = 5;
+            if (this.pastas.length > 4) {
+                this.pastas.length = 4;
             }
-
         });
         this.new_line();
 
-        this.key_triggered_button("Remove Carrots", ["Control", "5"], () => {
+        this.key_triggered_button("Remove Carrots", ["6"], () => {
             this.carrots.pop();
         });
-        this.new_line(); 
+        // this.new_line(); 
 
-        this.key_triggered_button("Remove Chicken", ["Control", "6"], () => {
+        this.key_triggered_button("Remove Chicken", ["7"], () => {
             this.chickens.pop();
         });
-        this.new_line();
+        // this.new_line();
 
-        this.key_triggered_button("Remove Celery", ["Control", "7"], () => {
+
+        this.key_triggered_button("Remove Celery", ["8"], () => {
             this.celerys.pop();
         });
-        this.new_line();
+        // this.new_line();
 
-        this.key_triggered_button("Remove Pasta", ["Control", "8"], () => {
+        this.key_triggered_button("Remove Pasta", ["9"], () => {
             this.pastas.pop();
         });
-        this.new_line();
+        // this.new_line();
 
-        this.key_triggered_button("Remove Mushroom", ["Control", "9"], () => {
+        this.key_triggered_button("Remove Mushroom", ["0"], () => {
             this.mushrooms.pop();
         });
-        this.new_line();
+        // this.new_line();
     }
 
     // this is ripped from collisions-demo.js
@@ -515,7 +544,7 @@ export class Main_Project extends Scene {
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
         if (!context.scratchpad.controls) {
-            this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
+            // this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
             // Define the global camera and projection matrices, which are stored in program_state.
             program_state.set_camera(this.initial_camera_location);
         }
@@ -585,38 +614,35 @@ export class Main_Project extends Scene {
             angle = Math.PI / 2 * ((half_quarter - (curr_quarter - half_quarter)) / half_quarter)
         }
 
+
         // for collision detection                                
         //this.simulate(program_state.animation_delta_time);
 
         //carrots 
         var carrot1_trans = model_transform;
-        const c1 = this.coordinates[0];
+        const c1 = this.coordinates[this.indicies[0]];
+
         carrot1_trans = carrot1_trans.times(Mat4.rotation(angle/4, 0, 1, 0))
                                      .times(Mat4.translation(c1[0], c1[1], c1[2]))
                                      .times(Mat4.scale(0.5, 0.5, 0.5));
 
         var carrot2_trans = model_transform;
-        const c2 = this.coordinates[1];
+        const c2 = this.coordinates[this.indicies[1]];
+
         carrot2_trans = carrot2_trans.times(Mat4.rotation(angle/4, 0, 1, 0))
                                     .times(Mat4.translation(c2[0], c2[1], c2[2]))
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
         
         var carrot3_trans = model_transform;
-        const c3 = this.coordinates[6];
+        const c3 = this.coordinates[this.indicies[2]];
         carrot3_trans = carrot3_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
                                     .times(Mat4.translation(c3[0], c3[1], c3[2]))
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
         var carrot4_trans = model_transform;
-        const c4 = this.coordinates[10];
+        const c4 = this.coordinates[this.indicies[3]];
         carrot4_trans = carrot4_trans.times(Mat4.rotation(angle/4, 0, 1, 0))
                                         .times(Mat4.translation(c4[0], c4[1], c4[2]))
                                         .times(Mat4.scale(0.5, 0.5, 0.5));
-
-        var carrot5_trans = model_transform;
-        const c5 = this.coordinates[5];
-        carrot5_trans = carrot5_trans.times(Mat4.rotation(angle/4, 0, 1, 0))
-                                    .times(Mat4.translation(c5[0], c5[1], c5[2]))
-                                    .times(Mat4.scale(0.5, 0.5, 0.5));
 
         if (this.carrots.length === 1) {
                 this.shapes.ingredient.draw(context, program_state, carrot1_trans, this.materials.carrot); 
@@ -630,51 +656,38 @@ export class Main_Project extends Scene {
             this.shapes.ingredient.draw(context, program_state, carrot2_trans, this.materials.carrot); 
             this.shapes.ingredient.draw(context, program_state, carrot3_trans, this.materials.carrot); 
         }
-        if (this.carrots.length === 4) {
+
+        if (this.carrots.length >= 4) {
             this.shapes.ingredient.draw(context, program_state, carrot1_trans, this.materials.carrot);
             this.shapes.ingredient.draw(context, program_state, carrot2_trans, this.materials.carrot); 
             this.shapes.ingredient.draw(context, program_state, carrot3_trans, this.materials.carrot);
             this.shapes.ingredient.draw(context, program_state, carrot4_trans, this.materials.carrot); 
         }
-        if (this.carrots.length >= 5) {
-            this.shapes.ingredient.draw(context, program_state, carrot1_trans, this.materials.carrot);
-            this.shapes.ingredient.draw(context, program_state, carrot2_trans, this.materials.carrot); 
-            this.shapes.ingredient.draw(context, program_state, carrot3_trans, this.materials.carrot); 
-            this.shapes.ingredient.draw(context, program_state, carrot4_trans, this.materials.carrot); 
-            this.shapes.ingredient.draw(context, program_state, carrot5_trans, this.materials.carrot); 
-        }
 
         //chicken 
         var chicken1_trans = model_transform;
-        const ch1 = this.coordinates[2]
+        const ch1 = this.coordinates[this.indicies[4]]
         chicken1_trans = chicken1_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
                                     .times(Mat4.translation(ch1[0], ch1[1], ch1[2]))
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
 
         var chicken2_trans = model_transform;
-        const ch2 = this.coordinates[8];
+        const ch2 = this.coordinates[this.indicies[5]];
         chicken2_trans = chicken2_trans.times(Mat4.rotation(-angle/6, 0, 1, 0))
                                     .times(Mat4.translation(ch2[0], ch2[1], ch2[2]))
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
 
         var chicken3_trans = model_transform;
-        const ch3 = this.coordinates[20];
+        const ch3 = this.coordinates[this.indicies[6]];
         chicken3_trans = chicken3_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
                                     .times(Mat4.translation(ch3[0], ch3[1], ch3[2]))
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
         
         var chicken4_trans = model_transform;
-        const ch4 = this.coordinates[13]
+        const ch4 = this.coordinates[this.indicies[7]]
         chicken4_trans = chicken4_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
                                     .times(Mat4.translation(ch4[0], ch4[1], ch4[2]))
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
-
-        var chicken5_trans = model_transform;
-        const ch5 = this.coordinates[4]
-        chicken5_trans = chicken5_trans.times(Mat4.rotation(-angle/6, 0, 1, 0))
-                                    .times(Mat4.translation(ch5[0], ch5[1], ch5[2]))
-                                    .times(Mat4.scale(0.5, 0.5, 0.5));
-                            
 
         if (this.chickens.length === 1) {
             this.shapes.ingredient.draw(context, program_state, chicken1_trans, this.materials.chicken); 
@@ -689,52 +702,39 @@ export class Main_Project extends Scene {
             this.shapes.ingredient.draw(context, program_state, chicken3_trans, this.materials.chicken); 
 
         }
-        if (this.chickens.length === 4) {
+        if (this.chickens.length >= 4) {
             this.shapes.ingredient.draw(context, program_state, chicken1_trans, this.materials.chicken);
             this.shapes.ingredient.draw(context, program_state, chicken2_trans, this.materials.chicken); 
             this.shapes.ingredient.draw(context, program_state, chicken3_trans, this.materials.chicken);
             this.shapes.ingredient.draw(context, program_state, chicken4_trans, this.materials.chicken); 
 
         }
-        if (this.chickens.length >= 5) {
-            this.shapes.ingredient.draw(context, program_state, chicken1_trans, this.materials.chicken);
-            this.shapes.ingredient.draw(context, program_state, chicken2_trans, this.materials.chicken); 
-            this.shapes.ingredient.draw(context, program_state, chicken3_trans, this.materials.chicken); 
-            this.shapes.ingredient.draw(context, program_state, chicken4_trans, this.materials.chicken); 
-            this.shapes.ingredient.draw(context, program_state, chicken5_trans, this.materials.chicken); 
-        }
 
         // celery
         var celery1_trans = model_transform;
-        const ce1 = this.coordinates[3]
+        const ce1 = this.coordinates[this.indicies[8]]
         celery1_trans = celery1_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
                                     .times(Mat4.translation(ce1[0], ce1[1], ce1[2]))
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
 
         var celery2_trans = model_transform;
-        const ce2 = this.coordinates[9];
+        const ce2 = this.coordinates[this.indicies[9]];
         celery2_trans = celery2_trans.times(Mat4.rotation(-angle/6, 0, 1, 0))
                                     .times(Mat4.translation(ce2[0], ce2[1], ce2[2]))
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
 
         var celery3_trans = model_transform;
-        const ce3 = this.coordinates[7];
+        const ce3 = this.coordinates[this.indicies[10]];
         celery3_trans = celery3_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
                                     .times(Mat4.translation(ce3[0], ce3[1], ce3[2]))
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
         
         var celery4_trans = model_transform;
-        const ce4 = this.coordinates[22]
+        const ce4 = this.coordinates[this.indicies[11]]
         celery4_trans = celery4_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
                                     .times(Mat4.translation(ce4[0], ce4[1], ce4[2]))
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
 
-        var celery5_trans = model_transform;
-        const ce5 = this.coordinates[18]
-        celery5_trans = celery5_trans.times(Mat4.rotation(-angle/6, 0, 1, 0))
-                                    .times(Mat4.translation(ce5[0], ce5[1], ce5[2]))
-                                    .times(Mat4.scale(0.5, 0.5, 0.5));
-                            
 
         if (this.celerys.length === 1) {
             this.shapes.ingredient.draw(context, program_state, celery1_trans, this.materials.celery); 
@@ -749,54 +749,40 @@ export class Main_Project extends Scene {
             this.shapes.ingredient.draw(context, program_state, celery3_trans, this.materials.celery); 
 
         }
-        if (this.celerys.length === 4) {
+
+        if (this.celerys.length >= 4) {
             this.shapes.ingredient.draw(context, program_state, celery1_trans, this.materials.celery);
             this.shapes.ingredient.draw(context, program_state, celery2_trans, this.materials.celery); 
             this.shapes.ingredient.draw(context, program_state, celery3_trans, this.materials.celery);
             this.shapes.ingredient.draw(context, program_state, celery4_trans, this.materials.celery); 
 
         }
-        if (this.celerys.length >= 5) {
-            this.shapes.ingredient.draw(context, program_state, celery1_trans, this.materials.celery);
-            this.shapes.ingredient.draw(context, program_state, celery2_trans, this.materials.celery); 
-            this.shapes.ingredient.draw(context, program_state, celery3_trans, this.materials.celery);
-            this.shapes.ingredient.draw(context, program_state, celery4_trans, this.materials.celery);
-            this.shapes.ingredient.draw(context, program_state, celery5_trans, this.materials.celery); 
- 
-        }
-        
         //mushroom
         var mush1_trans = model_transform;
-        const m1 = this.coordinates[24]
+        const m1 = this.coordinates[this.indicies[12]]
         mush1_trans = mush1_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
                                     .times(Mat4.translation(m1[0], m1[1], m1[2]))
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
 
 
         var mush2_trans = model_transform;
-        const m2 = this.coordinates[11]
+        const m2 = this.coordinates[this.indicies[13]]
         mush2_trans = mush2_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
                                     .times(Mat4.translation(m2[0], m2[1], m2[2]))
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
 
         var mush3_trans = model_transform;
-        const m3 = this.coordinates[15]
+        const m3 = this.coordinates[this.indicies[14]]
         mush3_trans = mush3_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
                                     .times(Mat4.translation(m3[0], m3[1], m3[2]))
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
 
         var mush4_trans = model_transform;
-        const m4 = this.coordinates[12]
+        const m4 = this.coordinates[this.indicies[15]]
         mush4_trans = mush4_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
                                     .times(Mat4.translation(m4[0], m4[1], m4[2]))
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
-
-        var mush5_trans = model_transform;
-        const m5 = this.coordinates[14]
-        mush5_trans = mush5_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
-                                    .times(Mat4.translation(m5[0], m5[1], m5[2]))
-                                    .times(Mat4.scale(0.5, 0.5, 0.5));
-
+      
         if (this.mushrooms.length === 1) {
             this.shapes.ingredient.draw(context, program_state, mush1_trans, this.materials.mushroom); 
         }  
@@ -810,50 +796,35 @@ export class Main_Project extends Scene {
             this.shapes.ingredient.draw(context, program_state, mush3_trans, this.materials.mushroom); 
 
         } 
-        if (this.mushrooms.length === 4) {
+        if (this.mushrooms.length >= 4) {
             this.shapes.ingredient.draw(context, program_state, mush1_trans, this.materials.mushroom); 
             this.shapes.ingredient.draw(context, program_state, mush2_trans, this.materials.mushroom); 
             this.shapes.ingredient.draw(context, program_state, mush3_trans, this.materials.mushroom); 
             this.shapes.ingredient.draw(context, program_state, mush4_trans, this.materials.mushroom); 
-        } 
-        if (this.mushrooms.length >= 5) {
-            this.shapes.ingredient.draw(context, program_state, mush1_trans, this.materials.mushroom); 
-            this.shapes.ingredient.draw(context, program_state, mush2_trans, this.materials.mushroom); 
-            this.shapes.ingredient.draw(context, program_state, mush3_trans, this.materials.mushroom); 
-            this.shapes.ingredient.draw(context, program_state, mush4_trans, this.materials.mushroom); 
-            this.shapes.ingredient.draw(context, program_state, mush5_trans, this.materials.mushroom); 
 
-        } 
         // pasta
         var pasta1_trans = model_transform;
-        const p1 = this.coordinates[16]
+        const p1 = this.coordinates[this.indicies[16]]
         pasta1_trans = pasta1_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
                                     .times(Mat4.translation(p1[0], p1[1], p1[2]))
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
         var pasta2_trans = model_transform;
-        const p2 = this.coordinates[19]
+        const p2 = this.coordinates[this.indicies[17]]
         pasta2_trans = pasta2_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
                                     .times(Mat4.translation(p2[0], p2[1], p2[2]))
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
 
         var pasta3_trans = model_transform;
-        const p3 = this.coordinates[17]
+        const p3 = this.coordinates[this.indicies[18]]
         pasta3_trans = pasta3_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
                                     .times(Mat4.translation(p3[0], p3[1], p3[2]))
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
 
         var pasta4_trans = model_transform;
-        const p4 = this.coordinates[23]
+        const p4 = this.coordinates[this.indicies[19]]
         pasta4_trans = pasta4_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
                                     .times(Mat4.translation(p4[0], p4[1], p4[2]))
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
-
-        var pasta5_trans = model_transform;
-        const p5 = this.coordinates[21]
-        pasta5_trans = pasta5_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
-                                    .times(Mat4.translation(p5[0], p5[1], p5[2]))
-                                    .times(Mat4.scale(0.5, 0.5, 0.5));
-                            
          
         if (this.pastas.length === 1) {
             this.shapes.ingredient.draw(context, program_state, pasta1_trans, this.materials.pasta); 
@@ -868,29 +839,15 @@ export class Main_Project extends Scene {
             this.shapes.ingredient.draw(context, program_state, pasta3_trans, this.materials.pasta); 
 
         } 
-        if (this.pastas.length === 4) {
+        if (this.pastas.length >= 4) {
             this.shapes.ingredient.draw(context, program_state, pasta1_trans, this.materials.pasta); 
             this.shapes.ingredient.draw(context, program_state, pasta2_trans, this.materials.pasta); 
             this.shapes.ingredient.draw(context, program_state, pasta3_trans, this.materials.pasta); 
             this.shapes.ingredient.draw(context, program_state, pasta4_trans, this.materials.pasta); 
-        } 
-        if (this.pastas.length >= 5) {
-            this.shapes.ingredient.draw(context, program_state, pasta1_trans, this.materials.pasta); 
-            this.shapes.ingredient.draw(context, program_state, pasta2_trans, this.materials.pasta); 
-            this.shapes.ingredient.draw(context, program_state, pasta3_trans, this.materials.pasta); 
-            this.shapes.ingredient.draw(context, program_state, pasta4_trans, this.materials.pasta); 
-            this.shapes.ingredient.draw(context, program_state, pasta5_trans, this.materials.pasta); 
-
-        }                    
-                            
-      
     }
 }
 
 class Gouraud_Shader extends Shader {
-    // This is a Shader using Phong_Shader as template
-    // TODO: Modify the glsl coder here to create a Gouraud Shader (Planet 2)
-
     constructor(num_lights = 2) {
         super();
         this.num_lights = num_lights;

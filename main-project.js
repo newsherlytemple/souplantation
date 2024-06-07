@@ -1,5 +1,5 @@
 import {defs, tiny} from './examples/common.js';
-import {Body, Simulation} from './examples/collisions-demo.js';
+import {Body} from './examples/collisions-demo.js';
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
@@ -75,6 +75,7 @@ export class Main_Project extends Scene {
         super();
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
 
+        // for collision detection
         Object.assign(this, {time_accumulator: 0, time_scale: 1, t: 0, dt: 1 / 20, bodies: [], steps_taken: 0});
 
         this.coordinates = generate_positions();
@@ -126,17 +127,17 @@ export class Main_Project extends Scene {
 
         this.collider_selection = 0;
 
-        this.inactive_color = new Material(bump, {
-            color: color(.5, .5, .5, 1), ambient: .2,
-            texture: this.data.textures.rgb
-        });
-        this.active_color = this.inactive_color.override({color: color(.5, 0, 0, 1), ambient: .5});
-        this.bright = new Material(phong, {color: color(0, 1, 0, .5), ambient: 1});
+        // this.inactive_color = new Material(bump, {
+        //     color: color(.5, .5, .5, 1), ambient: .2,
+        //     texture: this.data.textures.rgb
+        // });
+        // this.active_color = this.inactive_color.override({color: color(.5, 0, 0, 1), ambient: .5});
+        // this.bright = new Material(phong, {color: color(0, 1, 0, .5), ambient: 1});
 
         // *** Materials
         this.materials = {
             test: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#89CFF0")}),
+                {ambient: .4, diffusivity: .6, color: hex_color("#DC143C")}),
             // materials for pot + stovetop
             pot: new Material(new defs.Phong_Shader(),
                 {ambient: 0.4, diffusivity: 0.6, color: hex_color("#808080"), specularity: 1}),
@@ -262,14 +263,7 @@ export class Main_Project extends Scene {
         this.new_line();
     }
 
-    increase() {
-        this.collider_selection = Math.min(this.collider_selection + 1, this.colliders.length - 1);
-    }
-
-    decrease() {
-        this.collider_selection = Math.max(this.collider_selection - 1, 0)
-    }
-
+    // this is ripped from collisions-demo.js
     simulate(frame_time) {
         // simulate(): Carefully advance time according to Glenn Fiedler's
         // "Fix Your Timestep" blog post.
@@ -311,11 +305,6 @@ export class Main_Project extends Scene {
                 // Cache the inverse of matrix of body "a" to save time.
                 a.inverse = Mat4.inverse(a.drawn_location);
 
-                a.linear_velocity = a.linear_velocity.minus(a.center.times(dt));
-                // Apply a small centripetal force to everything.
-                a.material = this.inactive_color;
-                // Default color: white
-
                 if (a.linear_velocity.norm() == 0)
                     continue;
                 // *** Collision process is here ***
@@ -326,9 +315,10 @@ export class Main_Project extends Scene {
                         continue;
                     // If we get here, we collided, so turn red and zero out the
                     // velocity so they don't inter-penetrate any further.
-                    a.material = this.active_color;
-                    a.linear_velocity = vec3(0, 0, 0);
-                    a.angular_velocity = 0;
+                    else{
+                        a_trans = Mat4.identity().times(Mat4.translation(5,5,5));
+                        
+                    }
                 }
             }
     }
@@ -369,17 +359,6 @@ export class Main_Project extends Scene {
                                 .times(Mat4.scale(1,1.5,1));
         this.shapes.pothandle.draw(context, program_state, h2_trans, this.materials.pot);
     }
-
-    // draw_bubbles(context, program_state, model_transform) {
-    //     let bub_trans = model_transform;
-    //     const pos = random_position();
-    //     let x = pos[0];
-    //     let y = pos[1];
-    //     let z = pos[2];
-    //     bub_trans = bub_trans.times(Mat4.translation(x, y, z));
-
-    //     this.shapes.bubble.draw(context, program_state, bub_trans, this.materials.broth);
-    // }
 
     // draw the stove top
     draw_stovetop(context, program_state, model_transform) {
@@ -477,9 +456,6 @@ export class Main_Project extends Scene {
         broth_transform = broth_transform.times(Mat4.rotation(t, 0,1,0));
         this.draw_broth(context, program_state, broth_transform);
 
-
-     
-
         const period = 10;
         const quarter = period / 4;
 
@@ -526,6 +502,9 @@ export class Main_Project extends Scene {
             // move backwards for second half of orbit
             angle = Math.PI / 2 * ((half_quarter - (curr_quarter - half_quarter)) / half_quarter)
         }
+
+        // for collision detection                                
+        //this.simulate(program_state.animation_delta_time);
 
         //carrots 
         var carrot1_trans = model_transform;

@@ -64,22 +64,8 @@ function random_indicies() {
     }
   
     return numbers;
-  }
+}
 
-// const taken_offset = new Set();
-
-// function random_offset() {
-//     let x2, y2, z2, offset:
-//     do {
-//         x = Math.floor(Math.random() -3);
-//         y = Math.floor(Math.random() * (1.75 - 1.2)) + 1.2;
-//         z = Math.floor(Math.random() * 6 - 3);
-
-//         offset = pos_to_string(x, y, z);
-//     } while (taken_offset.has(offset));
-//     taken_offset.add(offset);
-//     return vec3(x2, y2, z2);
-// }
 
 function generate_positions() {
     let coordinates = [];
@@ -165,19 +151,14 @@ export class Main_Project extends Scene {
         };
 
         this.colliders = [
-            {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(1), leeway: 1},
-            {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(2), leeway: 1},
-            {intersect_test: Body.intersect_cube, points: new defs.Cube(), leeway: 1}
+            {intersect_test: Body.intersect_sphere, points: new defs.Cube(), leeway: 0.1},
+            {intersect_test: Body.intersect_sphere, points: new defs.Cube(), leeway: 0.1},
+            {intersect_test: Body.intersect_cube, points: new defs.Cube(), leeway: 0.1}
         ];
 
         this.collider_selection = 0;
 
-        // this.inactive_color = new Material(bump, {
-        //     color: color(.5, .5, .5, 1), ambient: .2,
-        //     texture: this.data.textures.rgb
-        // });
-        // this.active_color = this.inactive_color.override({color: color(.5, 0, 0, 1), ambient: .5});
-        // this.bright = new Material(phong, {color: color(0, 1, 0, .5), ambient: 1});
+        this.bright = new Material(new defs.Phong_Shader(), {color: color(0, 1, 0, .5), ambient: 1});
 
         // *** Materials
         this.materials = {
@@ -201,7 +182,7 @@ export class Main_Project extends Scene {
             grout: new Material(new Gouraud_Shader(),
                 {ambient: 0.4, diffusivity: 0.6, color: hex_color("#cdb4db")}),
             
-                // materials for soup
+        // materials for soup
             broth: new Material(new defs.Textured_Phong(),
                 {ambient: 1, diffusivity: 0.1, specularity: 0.1, texture: new Texture("assets/broth.png")}),
 
@@ -229,6 +210,7 @@ export class Main_Project extends Scene {
     };
             
         this.initial_camera_location = Mat4.look_at(vec3(0, 15, 15), vec3(0, 0, 0), vec3(0, 1, 0));
+        this.showBoxes = false;
     }
 
     make_control_panel() {
@@ -306,68 +288,12 @@ export class Main_Project extends Scene {
         this.key_triggered_button("Remove Mushroom", ["0"], () => {
             this.mushrooms.pop();
         });
-        // this.new_line();
+        this.new_line();
+        this.key_triggered_button("Show Collider Boxes", ["c"], () => {
+            this.showBoxes = !this.showBoxes;
+        });
     }
 
-    // this is ripped from collisions-demo.js
-    simulate(frame_time) {
-        // simulate(): Carefully advance time according to Glenn Fiedler's
-        // "Fix Your Timestep" blog post.
-        // This line gives ourselves a way to trick the simulator into thinking
-        // that the display framerate is running fast or slow:
-        frame_time = this.time_scale * frame_time;
-
-        // Avoid the spiral of death; limit the amount of time we will spend
-        // computing during this timestep if display lags:
-        this.time_accumulator += Math.min(frame_time, 0.1);
-        // Repeatedly step the simulation until we're caught up with this frame:
-        while (Math.abs(this.time_accumulator) >= this.dt) {
-            // Single step of the simulation for all bodies:
-            this.update_state(this.dt);
-            for (let b of this.bodies)
-                b.advance(this.dt);
-            // Following the advice of the article, de-couple
-            // our simulation time from our frame rate:
-            this.t += Math.sign(frame_time) * this.dt;
-            this.time_accumulator -= Math.sign(frame_time) * this.dt;
-            this.steps_taken++;
-        }
-        // Store an interpolation factor for how close our frame fell in between
-        // the two latest simulation time steps, so we can correctly blend the
-        // two latest states and display the result.
-        let alpha = this.time_accumulator / this.dt;
-        for (let b of this.bodies) b.blend_state(alpha);
-    }
-
-    update_state(dt, num_bodies) {
-        while (this.bodies.length < num_bodies){
-            for (const ingredient of ingredients){
-                this.bodies.push(new Body(ingredient));
-            }
-        }
-        const collider = this.colliders[this.collider_selection];
-            // Loop through all bodies (call each "a"):
-            for (let a of this.bodies) {
-                // Cache the inverse of matrix of body "a" to save time.
-                a.inverse = Mat4.inverse(a.drawn_location);
-
-                if (a.linear_velocity.norm() == 0)
-                    continue;
-                // *** Collision process is here ***
-                // Loop through all bodies again (call each "b"):
-                for (let b of this.bodies) {
-                    // Pass the two bodies and the collision shape to check_if_colliding():
-                    if (!a.check_if_colliding(b, collider))
-                        continue;
-                    // If we get here, we collided, so turn red and zero out the
-                    // velocity so they don't inter-penetrate any further.
-                    else{
-                        a_trans = Mat4.identity().times(Mat4.translation(5,5,5));
-                        
-                    }
-                }
-            }
-    }
 
     // draw the pot
     draw_pot(context, program_state, model_transform){
@@ -598,6 +524,7 @@ export class Main_Project extends Scene {
             0.3730641276137879
         ];
 
+        this.bodies = [];
 
         // calculate angle based on offset
         const total_length = this.carrots.length + this.chickens.length + this.celerys.length + this.pastas.length + this.mushrooms.length
@@ -613,11 +540,7 @@ export class Main_Project extends Scene {
             // move backwards for second half of orbit
             angle = Math.PI / 2 * ((half_quarter - (curr_quarter - half_quarter)) / half_quarter)
         }
-
-
-        // for collision detection                                
-        //this.simulate(program_state.animation_delta_time);
-
+    
         //carrots 
         var carrot1_trans = model_transform;
         const c1 = this.coordinates[this.indicies[0]];
@@ -643,25 +566,53 @@ export class Main_Project extends Scene {
         carrot4_trans = carrot4_trans.times(Mat4.rotation(angle/4, 0, 1, 0))
                                         .times(Mat4.translation(c4[0], c4[1], c4[2]))
                                         .times(Mat4.scale(0.5, 0.5, 0.5));
+        const {points, leeway} = this.colliders[this.collider_selection];
+        const size = vec3(1 + leeway, 1 + leeway, 1 + leeway);
 
         if (this.carrots.length === 1) {
-                this.shapes.ingredient.draw(context, program_state, carrot1_trans, this.materials.carrot); 
+            let ca1 = this.shapes.ingredient.draw(context, program_state, carrot1_trans, this.materials.carrot);
+            this.bodies.push(new Body(ca1, this.materials.carrot, carrot1_trans, c1));
+            if (this.showBoxes)
+                points.draw(context, program_state, carrot1_trans, this.bright, "LINE_STRIP");
         }  
         if (this.carrots.length === 2) {
-                this.shapes.ingredient.draw(context, program_state, carrot1_trans, this.materials.carrot);
-                this.shapes.ingredient.draw(context, program_state, carrot2_trans, this.materials.carrot); 
+            let ca1 = this.shapes.ingredient.draw(context, program_state, carrot1_trans, this.materials.carrot);
+            let ca2 = this.shapes.ingredient.draw(context, program_state, carrot2_trans, this.materials.carrot);
+            this.bodies.push(new Body(ca1, this.materials.carrot, carrot1_trans, c1));
+            this.bodies.push(new Body(ca2, this.materials.carrot, carrot2_trans, c2));
+            if (this.showBoxes) {
+                points.draw(context, program_state, carrot1_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, carrot2_trans, this.bright, "LINE_STRIP");
+            }
         }
         if (this.carrots.length === 3) {
-            this.shapes.ingredient.draw(context, program_state, carrot1_trans, this.materials.carrot);
-            this.shapes.ingredient.draw(context, program_state, carrot2_trans, this.materials.carrot); 
-            this.shapes.ingredient.draw(context, program_state, carrot3_trans, this.materials.carrot); 
+            let ca1 = this.shapes.ingredient.draw(context, program_state, carrot1_trans, this.materials.carrot);
+            let ca2 = this.shapes.ingredient.draw(context, program_state, carrot2_trans, this.materials.carrot);
+            let ca3 = this.shapes.ingredient.draw(context, program_state, carrot3_trans, this.materials.carrot);
+            this.bodies.push(new Body(ca1, this.materials.carrot, carrot1_trans, c1));
+            this.bodies.push(new Body(ca2, this.materials.carrot, carrot2_trans, c2));
+            this.bodies.push(new Body(ca3, this.materials.carrot, carrot3_trans, c3));
+            if (this.showBoxes){
+                points.draw(context, program_state, carrot1_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, carrot2_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, carrot3_trans, this.bright, "LINE_STRIP");        
+            }
         }
-
         if (this.carrots.length >= 4) {
-            this.shapes.ingredient.draw(context, program_state, carrot1_trans, this.materials.carrot);
-            this.shapes.ingredient.draw(context, program_state, carrot2_trans, this.materials.carrot); 
-            this.shapes.ingredient.draw(context, program_state, carrot3_trans, this.materials.carrot);
-            this.shapes.ingredient.draw(context, program_state, carrot4_trans, this.materials.carrot); 
+            let ca1 = this.shapes.ingredient.draw(context, program_state, carrot1_trans, this.materials.carrot);
+            let ca2 = this.shapes.ingredient.draw(context, program_state, carrot2_trans, this.materials.carrot);
+            let ca3 = this.shapes.ingredient.draw(context, program_state, carrot3_trans, this.materials.carrot);
+            let ca4 = this.shapes.ingredient.draw(context, program_state, carrot4_trans, this.materials.carrot);
+            this.bodies.push(new Body(ca1, this.materials.carrot, carrot1_trans, c1));
+            this.bodies.push(new Body(ca2, this.materials.carrot, carrot2_trans, c2));
+            this.bodies.push(new Body(ca3, this.materials.carrot, carrot3_trans, c3));
+            this.bodies.push(new Body(ca4, this.materials.carrot, carrot4_trans, c4));
+            if (this.showBoxes) {
+                points.draw(context, program_state, carrot1_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, carrot2_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, carrot3_trans, this.bright, "LINE_STRIP"); 
+                points.draw(context, program_state, carrot4_trans, this.bright, "LINE_STRIP"); 
+            }
         }
 
         //chicken 
@@ -690,24 +641,50 @@ export class Main_Project extends Scene {
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
 
         if (this.chickens.length === 1) {
-            this.shapes.ingredient.draw(context, program_state, chicken1_trans, this.materials.chicken); 
-        }  
+            let chi1 = this.shapes.ingredient.draw(context, program_state, chicken1_trans, this.materials.chicken);
+            this.bodies.push(new Body(chi1, this.materials.chicken, chicken1_trans, ch1));
+            if (this.showBoxes) {
+                points.draw(context, program_state, chicken1_trans, this.bright, "LINE_STRIP");
+            }
+        }
         if (this.chickens.length === 2) {
-            this.shapes.ingredient.draw(context, program_state, chicken1_trans, this.materials.chicken);
-            this.shapes.ingredient.draw(context, program_state, chicken2_trans, this.materials.chicken); 
+            let chi1 = this.shapes.ingredient.draw(context, program_state, chicken1_trans, this.materials.chicken);
+            let chi2 = this.shapes.ingredient.draw(context, program_state, chicken2_trans, this.materials.chicken);
+            this.bodies.push(new Body(chi1, this.materials.chicken, chicken1_trans, ch1));
+            this.bodies.push(new Body(chi2, this.materials.chicken, chicken2_trans, ch2));
+            if (this.showBoxes) {
+                points.draw(context, program_state, chicken1_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, chicken2_trans, this.bright, "LINE_STRIP");
+            }
         }
         if (this.chickens.length === 3) {
-            this.shapes.ingredient.draw(context, program_state, chicken1_trans, this.materials.chicken);
-            this.shapes.ingredient.draw(context, program_state, chicken2_trans, this.materials.chicken); 
-            this.shapes.ingredient.draw(context, program_state, chicken3_trans, this.materials.chicken); 
-
+            let chi1 = this.shapes.ingredient.draw(context, program_state, chicken1_trans, this.materials.chicken);
+            let chi2 = this.shapes.ingredient.draw(context, program_state, chicken2_trans, this.materials.chicken);
+            let chi3 = this.shapes.ingredient.draw(context, program_state, chicken3_trans, this.materials.chicken);
+            this.bodies.push(new Body(chi1, this.materials.chicken, chicken1_trans, ch1));
+            this.bodies.push(new Body(chi2, this.materials.chicken, chicken2_trans, ch2));
+            this.bodies.push(new Body(chi3, this.materials.chicken, chicken3_trans, ch3));
+            if (this.showBoxes){
+                points.draw(context, program_state, chicken1_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, chicken2_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, chicken3_trans, this.bright, "LINE_STRIP");        
+            }
         }
         if (this.chickens.length >= 4) {
-            this.shapes.ingredient.draw(context, program_state, chicken1_trans, this.materials.chicken);
-            this.shapes.ingredient.draw(context, program_state, chicken2_trans, this.materials.chicken); 
-            this.shapes.ingredient.draw(context, program_state, chicken3_trans, this.materials.chicken);
-            this.shapes.ingredient.draw(context, program_state, chicken4_trans, this.materials.chicken); 
-
+            let chi1 = this.shapes.ingredient.draw(context, program_state, chicken1_trans, this.materials.chicken);
+            let chi2 = this.shapes.ingredient.draw(context, program_state, chicken2_trans, this.materials.chicken);
+            let chi3 = this.shapes.ingredient.draw(context, program_state, chicken3_trans, this.materials.chicken);
+            let chi4 = this.shapes.ingredient.draw(context, program_state, chicken4_trans, this.materials.chicken);
+            this.bodies.push(new Body(chi1, this.materials.chicken, chicken1_trans, ch1));
+            this.bodies.push(new Body(chi2, this.materials.chicken, chicken2_trans, ch2));
+            this.bodies.push(new Body(chi3, this.materials.chicken, chicken3_trans, ch3));
+            this.bodies.push(new Body(chi4, this.materials.chicken, chicken4_trans, ch4));
+            if (this.showBoxes) {
+                points.draw(context, program_state, chicken1_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, chicken2_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, chicken3_trans, this.bright, "LINE_STRIP"); 
+                points.draw(context, program_state, chicken4_trans, this.bright, "LINE_STRIP"); 
+            }
         }
 
         // celery
@@ -737,27 +714,53 @@ export class Main_Project extends Scene {
 
 
         if (this.celerys.length === 1) {
-            this.shapes.ingredient.draw(context, program_state, celery1_trans, this.materials.celery); 
+            let cel1 = this.shapes.ingredient.draw(context, program_state, celery1_trans, this.materials.celery);
+            this.bodies.push(new Body(cel1, this.materials.celery, celery1_trans, ce1));
+            if (this.showBoxes) {
+                points.draw(context, program_state, celery1_trans, this.bright, "LINE_STRIP");
+            }        
         }  
         if (this.celerys.length === 2) {
-            this.shapes.ingredient.draw(context, program_state, celery1_trans, this.materials.celery);
-            this.shapes.ingredient.draw(context, program_state, celery2_trans, this.materials.celery); 
+            let cel1 = this.shapes.ingredient.draw(context, program_state, celery1_trans, this.materials.celery);
+            let cel2 = this.shapes.ingredient.draw(context, program_state, celery2_trans, this.materials.celery);
+            this.bodies.push(new Body(cel1, this.materials.celery, celery1_trans, ce1));
+            this.bodies.push(new Body(cel2, this.materials.celery, celery2_trans, ce2));
+            if (this.showBoxes) {
+                points.draw(context, program_state, celery1_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, celery2_trans, this.bright, "LINE_STRIP");
+            } 
         }
         if (this.celerys.length === 3) {
-            this.shapes.ingredient.draw(context, program_state, celery1_trans, this.materials.celery);
-            this.shapes.ingredient.draw(context, program_state, celery2_trans, this.materials.celery); 
-            this.shapes.ingredient.draw(context, program_state, celery3_trans, this.materials.celery); 
-
+            let cel1 = this.shapes.ingredient.draw(context, program_state, celery1_trans, this.materials.celery);
+            let cel2 = this.shapes.ingredient.draw(context, program_state, celery2_trans, this.materials.celery);
+            let cel3 = this.shapes.ingredient.draw(context, program_state, celery3_trans, this.materials.celery);
+            this.bodies.push(new Body(cel1, this.materials.celery, celery1_trans, ce1));
+            this.bodies.push(new Body(cel2, this.materials.celery, celery2_trans, ce2));
+            this.bodies.push(new Body(cel3, this.materials.celery, celery3_trans, ce3));
+            if (this.showBoxes) {
+                points.draw(context, program_state, celery1_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, celery2_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, celery3_trans, this.bright, "LINE_STRIP");
+            } 
         }
 
         if (this.celerys.length >= 4) {
-            this.shapes.ingredient.draw(context, program_state, celery1_trans, this.materials.celery);
-            this.shapes.ingredient.draw(context, program_state, celery2_trans, this.materials.celery); 
-            this.shapes.ingredient.draw(context, program_state, celery3_trans, this.materials.celery);
-            this.shapes.ingredient.draw(context, program_state, celery4_trans, this.materials.celery); 
-
+            let cel1 = this.shapes.ingredient.draw(context, program_state, celery1_trans, this.materials.celery);
+            let cel2 = this.shapes.ingredient.draw(context, program_state, celery2_trans, this.materials.celery);
+            let cel3 = this.shapes.ingredient.draw(context, program_state, celery3_trans, this.materials.celery);
+            let cel4 = this.shapes.ingredient.draw(context, program_state, celery4_trans, this.materials.celery);
+            this.bodies.push(new Body(cel1, this.materials.celery, celery1_trans, ce1));
+            this.bodies.push(new Body(cel2, this.materials.celery, celery2_trans, ce2));
+            this.bodies.push(new Body(cel3, this.materials.celery, celery3_trans, ce3));
+            this.bodies.push(new Body(cel4, this.materials.celery, celery4_trans, ce4));
+            if (this.showBoxes) {
+                points.draw(context, program_state, celery1_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, celery2_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, celery3_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, celery4_trans, this.bright, "LINE_STRIP");
+            } 
         }
-        //mushroom
+        // mushrooms
         var mush1_trans = model_transform;
         const m1 = this.coordinates[this.indicies[12]]
         mush1_trans = mush1_trans.times(Mat4.rotation(angle/2, 0, 1, 0))
@@ -784,24 +787,51 @@ export class Main_Project extends Scene {
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
       
         if (this.mushrooms.length === 1) {
-            this.shapes.ingredient.draw(context, program_state, mush1_trans, this.materials.mushroom); 
+            let mu1 = this.shapes.ingredient.draw(context, program_state, mush1_trans, this.materials.mushroom);
+            this.bodies.push(new Body(mu1, this.materials.mushroom, mush1_trans, m1));
+            if (this.showBoxes) {
+                points.draw(context, program_state, mush1_trans, this.bright, "LINE_STRIP");
+            }         
         }  
         if (this.mushrooms.length === 2) {
-            this.shapes.ingredient.draw(context, program_state, mush1_trans, this.materials.mushroom); 
-            this.shapes.ingredient.draw(context, program_state, mush2_trans, this.materials.mushroom); 
+            let mu1 = this.shapes.ingredient.draw(context, program_state, mush1_trans, this.materials.mushroom);
+            let mu2 = this.shapes.ingredient.draw(context, program_state, mush2_trans, this.materials.mushroom);
+            this.bodies.push(new Body(mu1, this.materials.mushroom, mush1_trans, m1));
+            this.bodies.push(new Body(mu2, this.materials.mushroom, mush2_trans, m2));
+            if (this.showBoxes) {
+                points.draw(context, program_state, mush1_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, mush2_trans, this.bright, "LINE_STRIP");
+            } 
         }  
         if (this.mushrooms.length === 3) {
-            this.shapes.ingredient.draw(context, program_state, mush1_trans, this.materials.mushroom); 
-            this.shapes.ingredient.draw(context, program_state, mush2_trans, this.materials.mushroom); 
-            this.shapes.ingredient.draw(context, program_state, mush3_trans, this.materials.mushroom); 
-
+            let mu1 = this.shapes.ingredient.draw(context, program_state, mush1_trans, this.materials.mushroom);
+            let mu2 = this.shapes.ingredient.draw(context, program_state, mush2_trans, this.materials.mushroom);
+            let mu3 = this.shapes.ingredient.draw(context, program_state, mush3_trans, this.materials.mushroom);
+            this.bodies.push(new Body(mu1, this.materials.mushroom, mush1_trans, m1));
+            this.bodies.push(new Body(mu2, this.materials.mushroom, mush2_trans, m2));
+            this.bodies.push(new Body(mu3, this.materials.mushroom, mush3_trans, m3));
+            if (this.showBoxes) {
+                points.draw(context, program_state, mush1_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, mush2_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, mush3_trans, this.bright, "LINE_STRIP");
+            } 
         } 
         if (this.mushrooms.length >= 4) {
-            this.shapes.ingredient.draw(context, program_state, mush1_trans, this.materials.mushroom); 
-            this.shapes.ingredient.draw(context, program_state, mush2_trans, this.materials.mushroom); 
-            this.shapes.ingredient.draw(context, program_state, mush3_trans, this.materials.mushroom); 
-            this.shapes.ingredient.draw(context, program_state, mush4_trans, this.materials.mushroom); 
-
+            let mu1 = this.shapes.ingredient.draw(context, program_state, mush1_trans, this.materials.mushroom);
+            let mu2 = this.shapes.ingredient.draw(context, program_state, mush2_trans, this.materials.mushroom);
+            let mu3 = this.shapes.ingredient.draw(context, program_state, mush3_trans, this.materials.mushroom);
+            let mu4 = this.shapes.ingredient.draw(context, program_state, mush4_trans, this.materials.mushroom);
+            this.bodies.push(new Body(mu1, this.materials.mushroom, mush1_trans, m1));
+            this.bodies.push(new Body(mu2, this.materials.mushroom, mush2_trans, m2));
+            this.bodies.push(new Body(mu3, this.materials.mushroom, mush3_trans, m3));
+            this.bodies.push(new Body(mu4, this.materials.mushroom, mush4_trans, m4));
+            if (this.showBoxes) {
+                points.draw(context, program_state, mush1_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, mush2_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, mush3_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, mush4_trans, this.bright, "LINE_STRIP");
+            } 
+        }
         // pasta
         var pasta1_trans = model_transform;
         const p1 = this.coordinates[this.indicies[16]]
@@ -827,23 +857,65 @@ export class Main_Project extends Scene {
                                     .times(Mat4.scale(0.5, 0.5, 0.5));
          
         if (this.pastas.length === 1) {
-            this.shapes.ingredient.draw(context, program_state, pasta1_trans, this.materials.pasta); 
+            let pa1 = this.shapes.ingredient.draw(context, program_state, pasta1_trans, this.materials.pasta);
+            this.bodies.push(new Body(pa1, this.materials.pasta, pasta1_trans, p1));
+            if (this.showBoxes) {
+                points.draw(context, program_state, pasta1_trans, this.bright, "LINE_STRIP");
+            }         
         }  
         if (this.pastas.length === 2) {
-            this.shapes.ingredient.draw(context, program_state, pasta1_trans, this.materials.pasta); 
-            this.shapes.ingredient.draw(context, program_state, pasta2_trans, this.materials.pasta); 
+            let pa1 = this.shapes.ingredient.draw(context, program_state, pasta1_trans, this.materials.pasta);
+            let pa2 = this.shapes.ingredient.draw(context, program_state, pasta2_trans, this.materials.pasta);
+            this.bodies.push(new Body(pa1, this.materials.pasta, pasta1_trans, p1));
+            this.bodies.push(new Body(pa2, this.materials.pasta, pasta2_trans, p2));
+            if (this.showBoxes) {
+                points.draw(context, program_state, pasta1_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, pasta2_trans, this.bright, "LINE_STRIP");
+            } 
         }  
         if (this.pastas.length === 3) {
-            this.shapes.ingredient.draw(context, program_state, pasta1_trans, this.materials.pasta); 
-            this.shapes.ingredient.draw(context, program_state, pasta2_trans, this.materials.pasta); 
-            this.shapes.ingredient.draw(context, program_state, pasta3_trans, this.materials.pasta); 
-
+            let pa1 = this.shapes.ingredient.draw(context, program_state, pasta1_trans, this.materials.pasta);
+            let pa2 = this.shapes.ingredient.draw(context, program_state, pasta2_trans, this.materials.pasta);
+            let pa3 = this.shapes.ingredient.draw(context, program_state, pasta3_trans, this.materials.pasta);
+            this.bodies.push(new Body(pa1, this.materials.pasta, pasta1_trans, p1));
+            this.bodies.push(new Body(pa2, this.materials.pasta, pasta2_trans, p2));
+            this.bodies.push(new Body(pa3, this.materials.pasta, pasta3_trans, p3));
+            if (this.showBoxes) {
+                points.draw(context, program_state, pasta1_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, pasta2_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, pasta3_trans, this.bright, "LINE_STRIP");
+            } 
         } 
         if (this.pastas.length >= 4) {
-            this.shapes.ingredient.draw(context, program_state, pasta1_trans, this.materials.pasta); 
-            this.shapes.ingredient.draw(context, program_state, pasta2_trans, this.materials.pasta); 
-            this.shapes.ingredient.draw(context, program_state, pasta3_trans, this.materials.pasta); 
-            this.shapes.ingredient.draw(context, program_state, pasta4_trans, this.materials.pasta); 
+            let pa1 = this.shapes.ingredient.draw(context, program_state, pasta1_trans, this.materials.pasta);
+            let pa2 = this.shapes.ingredient.draw(context, program_state, pasta2_trans, this.materials.pasta);
+            let pa3 = this.shapes.ingredient.draw(context, program_state, pasta3_trans, this.materials.pasta);
+            let pa4 = this.shapes.ingredient.draw(context, program_state, pasta4_trans, this.materials.pasta);
+            this.bodies.push(new Body(pa1, this.materials.pasta, pasta1_trans, p1));
+            this.bodies.push(new Body(pa2, this.materials.pasta, pasta2_trans, p2));
+            this.bodies.push(new Body(pa3, this.materials.pasta, pasta3_trans, p3));
+            this.bodies.push(new Body(pa4, this.materials.pasta, pasta4_trans, p4));
+            if (this.showBoxes) {
+                points.draw(context, program_state, pasta1_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, pasta2_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, pasta3_trans, this.bright, "LINE_STRIP");
+                points.draw(context, program_state, pasta4_trans, this.bright, "LINE_STRIP");
+            } 
+        }
+        // collision detection
+        const collider = this.colliders[this.collider_selection];
+        for (let a of this.bodies) {
+            a.inverse = Mat4.inverse(a.drawn_location);
+            for (let b of this.bodies) {
+                if (!a.check_if_colliding(b, collider))
+                    continue;
+                else {
+                    a.coord[0] = a.coord[0]+ (Math.random() * 0.5 - 0.25);
+                    a.coord[1] = a.coord[1];
+                    a.coord[2] = a.coord[2]+ (Math.random() * 0.5 - 0.25);
+                }     
+            }
+        }
     }
 }
 
@@ -1030,7 +1102,7 @@ class Ring_Shader extends Shader {
             center = model_transform * vec4(0, 0, 0, 1);
             point_position = model_transform * vec4(position, 1);
             gl_Position = projection_camera_model_transform * vec4(position, 1); 
-        }`;
+        }`
     }
 
     fragment_glsl_code() {
@@ -1040,6 +1112,6 @@ class Ring_Shader extends Shader {
         void main(){
             float scalar = sin(15.0 * distance(point_position.xyz, center.xyz));
             gl_FragColor = scalar * vec4(0.81, 0, 0, 1);
-        }`;
+        }`
     }
 }

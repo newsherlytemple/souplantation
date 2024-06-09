@@ -7,9 +7,9 @@ export class Body {
     // **Body** can store and update the properties of a 3D body that incrementally
     // moves from its previous place due to velocities.  It conforms to the
     // approach outlined in the "Fix Your Timestep!" blog post by Glenn Fiedler.
-    constructor(shape, material, size) {
+    constructor(shape, material, drawn_location, coord) {
         Object.assign(this,
-            {shape, material, size})
+            {shape, material, drawn_location, coord})
     }
 
     // (within some margin of distance).
@@ -21,14 +21,15 @@ export class Body {
         return p.dot(p) < 1 + margin;
     }
 
-    emplace(location_matrix, linear_velocity, angular_velocity, spin_axis = vec3(0, 0, 0).randomized(1).normalized()) {                               // emplace(): assign the body's initial values, or overwrite them.
+    emplace(location_matrix) {                               // emplace(): assign the body's initial values, or overwrite them.
         this.center = location_matrix.times(vec4(0, 0, 0, 1)).to3();
-        this.rotation = Mat4.translation(...this.center.times(-1)).times(location_matrix);
-        this.previous = {center: this.center.copy(), rotation: this.rotation.copy()};
         // drawn_location gets replaced with an interpolated quantity:
         this.drawn_location = location_matrix;
-        this.temp_matrix = Mat4.identity();
-        return Object.assign(this, {linear_velocity, angular_velocity, spin_axis})
+    //    this.temp_matrix = Mat4.identity();
+    }
+
+    move_away_from() {
+        this.drawn_location = this.drawn_location.times(Mat4.translation(0.1, 0.1, 0));
     }
 
     advance(time_amount) {
@@ -62,6 +63,8 @@ export class Body {
             .times(Mat4.scale(...this.size));
     }
 
+     
+
     check_if_colliding(b, collider) {
         // check_if_colliding(): Collision detection function.
         // DISCLAIMER:  The collision method shown below is not used by anyone; it's just very quick
@@ -71,14 +74,12 @@ export class Body {
         // intersect without discretizing them into points).
         if (this == b)
             return false;
-        // Nothing collides with itself.
-        // Convert sphere b to the frame where a is a unit sphere:
+        // Nothing collides winverse(this.drawn_location)
         const T = this.inverse.times(b.drawn_location, this.temp_matrix);
 
         const {intersect_test, points, leeway} = collider;
-        // For each vertex in that b, shift to the coordinate frame of
-        // a_inv*b.  Check if in that coordinate frame it penetrates
-        // the unit sphere at the origin.  Leave some leeway.
+
+
         return points.arrays.position.some(p =>
             intersect_test(T.times(p.to4(1)).to3(), leeway));
     }
@@ -261,8 +262,8 @@ export class Collision_Demo extends Simulation {
         this.shapes = Object.assign({}, this.data.shapes);
         // Make simpler dummy shapes for representing all other shapes during collisions:
         this.colliders = [
-            {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(1), leeway: 1},
-            {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(2), leeway: 1},
+            {intersect_test: Body.intersect_sphere, points: new defs.Cube(), leeway: 1},
+            {intersect_test: Body.intersect_sphere, points: new defs.Cube(), leeway: 1},
             {intersect_test: Body.intersect_cube, points: new defs.Cube(), leeway: 1}
         ];
         this.collider_selection = 0;
@@ -270,8 +271,8 @@ export class Collision_Demo extends Simulation {
         const phong = new defs.Phong_Shader(1);
         const bump = new defs.Fake_Bump_Map(1)
         this.inactive_color = new Material(bump, {
-            color: color(.5, .5, .5, 1), ambient: .2,
-            texture: this.data.textures.rgb
+            color: color(.1, .1, .5, 1), ambient: .2,
+            //texture: this.data.textures.rgb
         });
         this.active_color = this.inactive_color.override({color: color(.5, 0, 0, 1), ambient: .5});
         this.bright = new Material(phong, {color: color(0, 1, 0, .5), ambient: 1});
